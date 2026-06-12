@@ -1,0 +1,133 @@
+import React, { useState, useEffect } from 'react';
+import { Modal } from '../ui/Modal';
+import { useBudget } from '../../contexts/BudgetContext';
+import toast from 'react-hot-toast';
+
+export default function CategoryModal({ isOpen, onClose, category = null }) {
+  const { dispatch } = useBudget();
+  const [formData, setFormData] = useState({
+    name: '',
+    limit: '',
+    color: '#facc15',
+  });
+
+  const isEditing = !!category;
+
+  useEffect(() => {
+    if (isOpen) {
+      if (category) {
+        setFormData({
+          name: category.name,
+          limit: category.limit,
+          color: category.color || '#facc15',
+        });
+      } else {
+        setFormData({ name: '', limit: '', color: '#facc15' });
+      }
+    }
+  }, [isOpen, category]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    
+    const payload = {
+      name: formData.name,
+      limit: Number(formData.limit),
+      color: formData.color,
+    };
+
+    if (isEditing) {
+      dispatch({ type: 'UPDATE_CATEGORY', payload: { ...payload, id: category.id } });
+      toast.success('Category updated');
+    } else {
+      dispatch({ type: 'ADD_CATEGORY', payload: { ...payload, id: Date.now().toString() } });
+      toast.success('Category added');
+    }
+    
+    onClose();
+  };
+
+  const handleDelete = () => {
+    if (window.confirm('Are you sure you want to delete this category?')) {
+      dispatch({ type: 'DELETE_CATEGORY', payload: category.id });
+      toast.success('Category deleted');
+      onClose();
+    }
+  };
+
+  return (
+    <Modal 
+      isOpen={isOpen} 
+      onClose={onClose} 
+      title={isEditing ? 'Edit Category' : 'Add Category'}
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-sm text-text-muted mb-1">Category Name</label>
+          <input
+            type="text"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            className="w-full bg-[#09090b] border border-zinc-700 rounded-lg px-3 py-2 text-text focus:outline-none focus:border-accent transition-colors"
+            placeholder="e.g. Groceries"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm text-text-muted mb-1">Budget Limit ($)</label>
+          <input
+            type="number"
+            name="limit"
+            value={formData.limit}
+            onChange={handleChange}
+            className="w-full bg-[#09090b] border border-zinc-700 rounded-lg px-3 py-2 text-text focus:outline-none focus:border-accent transition-colors"
+            placeholder="0.00"
+            min="0"
+            step="0.01"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm text-text-muted mb-1">Color</label>
+          <div className="flex items-center space-x-3">
+            <input
+              type="color"
+              name="color"
+              value={formData.color}
+              onChange={handleChange}
+              className="h-10 w-10 rounded cursor-pointer bg-transparent border-0 p-0"
+            />
+            <span className="text-sm text-text-muted">{formData.color}</span>
+          </div>
+        </div>
+
+        <div className="pt-4 flex space-x-3">
+          <button
+            type="submit"
+            className="flex-1 bg-accent text-primary font-medium py-2 rounded-lg hover:bg-accent-hover transition-colors"
+          >
+            {isEditing ? 'Save Changes' : 'Add Category'}
+          </button>
+          
+          {isEditing && (
+            <button
+              type="button"
+              onClick={handleDelete}
+              className="px-4 bg-red-500/10 text-red-500 border border-red-500/20 font-medium py-2 rounded-lg hover:bg-red-500/20 transition-colors"
+            >
+              Delete
+            </button>
+          )}
+        </div>
+      </form>
+    </Modal>
+  );
+}
