@@ -16,14 +16,21 @@ export default function NotificationHub() {
       if (limit === 0) return;
 
       const percent = (spent / limit) * 100;
-      if (percent >= 100) {
+      if (percent > 100) {
         newAlerts.push({
           id: category.id,
           type: 'danger',
           category: category.name,
-          message: `Exceeded budget by ${formatCurrency(spent - limit)}`,
+          message: `Over budget! Exceeded by ${formatCurrency(spent - limit)}`,
         });
-      } else if (percent >= 80) {
+      } else if (percent === 100) {
+        newAlerts.push({
+          id: category.id,
+          type: 'danger',
+          category: category.name,
+          message: `Limit reached — entire ${formatCurrency(limit)} budget spent`,
+        });
+      } else if (percent >= 85) {
         newAlerts.push({
           id: category.id,
           type: 'warning',

@@ -1,109 +1,139 @@
 import React, { useState, useEffect } from 'react';
 import { useBudget } from '../../contexts/BudgetContext';
 import { Card } from '../ui/Card';
-import toast from 'react-hot-toast';
+import { Edit2, Plus } from 'lucide-react';
+import { formatCurrency } from '../../utils/formatCurrency';
+import IncomeSourceModal from './IncomeSourceModal';
 
 export default function IncomeSettings() {
-  const { incomeInfo, dispatch } = useBudget();
-  const [formData, setFormData] = useState({
-    amount: incomeInfo.amount || '',
-    frequency: incomeInfo.frequency || 'monthly',
-    isBorrowed: incomeInfo.isBorrowed || false,
+  const { incomeSources, cycleStartDate, cycleFrequency, totalIncome, dispatch } = useBudget();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedSource, setSelectedSource] = useState(null);
+
+  const [cycleConfig, setCycleConfig] = useState({
+    frequency: cycleFrequency || 'monthly',
+    startDate: cycleStartDate ? cycleStartDate.split('T')[0] : new Date().toISOString().split('T')[0]
   });
 
-  // Sync if context updates externally
   useEffect(() => {
-    setFormData({
-      amount: incomeInfo.amount,
-      frequency: incomeInfo.frequency,
-      isBorrowed: incomeInfo.isBorrowed,
+    setCycleConfig({
+      frequency: cycleFrequency,
+      startDate: cycleStartDate ? cycleStartDate.split('T')[0] : new Date().toISOString().split('T')[0]
     });
-  }, [incomeInfo]);
+  }, [cycleFrequency, cycleStartDate]);
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const handleCycleChange = (e) => {
+    const { name, value } = e.target;
+    setCycleConfig(prev => ({ ...prev, [name]: value }));
+    
+    // Dispatch whenever it changes
     dispatch({
-      type: 'SET_INCOME_INFO',
+      type: 'SET_CYCLE_CONFIG',
       payload: {
-        amount: Number(formData.amount),
-        frequency: formData.frequency,
-        isBorrowed: formData.isBorrowed,
+        cycleFrequency: name === 'frequency' ? value : cycleConfig.frequency,
+        cycleStartDate: name === 'startDate' ? value : cycleConfig.startDate,
       }
     });
-    toast.success('Income settings updated');
+  };
+
+  const handleAddClick = () => {
+    setSelectedSource(null);
+    setIsModalOpen(true);
+  };
+
+  const handleEditClick = (source) => {
+    setSelectedSource(source);
+    setIsModalOpen(true);
   };
 
   return (
-    <Card>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-semibold text-text">Income / Allowance</h2>
-        {formData.isBorrowed && (
-          <span className="bg-red-500/10 text-red-500 text-xs px-2 py-1 rounded-full font-medium border border-red-500/20">
-            ⚠️ Repayable Debt
-          </span>
-        )}
+    <Card className="h-full flex flex-col space-y-6">
+      <div>
+        <h2 className="text-xl font-semibold text-text mb-4">Cycle Configuration</h2>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm text-text-muted mb-1">Master Cycle Frequency</label>
+            <select
+              name="frequency"
+              value={cycleConfig.frequency}
+              onChange={handleCycleChange}
+              className="w-full bg-[#09090b] border border-zinc-700 rounded-lg px-3 py-2 text-text focus:outline-none focus:border-accent transition-colors"
+            >
+              <option value="weekly">Weekly</option>
+              <option value="bi-weekly">Bi-weekly</option>
+              <option value="monthly">Monthly</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm text-text-muted mb-1">Cycle Start Date</label>
+            <input
+              type="date"
+              name="startDate"
+              value={cycleConfig.startDate}
+              onChange={handleCycleChange}
+              className="w-full bg-[#09090b] border border-zinc-700 rounded-lg px-3 py-2 text-text focus:outline-none focus:border-accent transition-colors [color-scheme:dark]"
+            />
+          </div>
+        </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm text-text-muted mb-1">Amount ($)</label>
-          <input
-            type="number"
-            name="amount"
-            value={formData.amount}
-            onChange={handleChange}
-            className="w-full bg-[#09090b] border border-zinc-700 rounded-lg px-3 py-2 text-text focus:outline-none focus:border-accent transition-colors"
-            placeholder="0.00"
-            min="0"
-            step="0.01"
-            required
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm text-text-muted mb-1">Frequency</label>
-          <select
-            name="frequency"
-            value={formData.frequency}
-            onChange={handleChange}
-            className="w-full bg-[#09090b] border border-zinc-700 rounded-lg px-3 py-2 text-text focus:outline-none focus:border-accent transition-colors"
+      <div className="flex-1">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-text">Income Sources</h2>
+          <button
+            onClick={handleAddClick}
+            className="flex items-center space-x-1 text-sm bg-accent text-primary px-3 py-1.5 rounded-lg hover:bg-accent-hover transition-colors font-medium"
           >
-            <option value="weekly">Weekly</option>
-            <option value="bi-weekly">Bi-weekly</option>
-            <option value="monthly">Monthly</option>
-            <option value="one-time">One-time</option>
-          </select>
+            <Plus size={16} />
+            <span>Add</span>
+          </button>
         </div>
 
-        <div className="flex items-center space-x-2 pt-2">
-          <input
-            type="checkbox"
-            id="isBorrowed"
-            name="isBorrowed"
-            checked={formData.isBorrowed}
-            onChange={handleChange}
-            className="w-4 h-4 rounded border-zinc-700 text-accent bg-[#09090b] focus:ring-accent focus:ring-offset-[#18181b]"
-          />
-          <label htmlFor="isBorrowed" className="text-sm text-text-muted select-none cursor-pointer">
-            Is this money borrowed? (Needs to be paid back)
-          </label>
+        <div className="space-y-3">
+          {incomeSources.length === 0 ? (
+             <div className="py-6 text-center border border-dashed border-zinc-700 rounded-xl">
+               <p className="text-text-muted text-sm">No income sources yet.</p>
+             </div>
+          ) : (
+            incomeSources.map(source => (
+              <div key={source.id} className="bg-[#09090b] border border-zinc-800 rounded-lg p-3 flex justify-between items-center group">
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <h3 className="font-medium text-sm text-text">{source.name}</h3>
+                    {source.isBorrowed && (
+                      <span className="text-[10px] bg-red-500/10 text-red-500 px-1.5 py-0.5 rounded border border-red-500/20">
+                        Debt
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-text-muted mt-0.5">
+                    {formatCurrency(source.amount)} / {source.frequency}
+                  </p>
+                </div>
+                <button
+                  onClick={() => handleEditClick(source)}
+                  className="p-1.5 text-zinc-500 hover:text-accent opacity-0 group-hover:opacity-100 transition-all rounded-md hover:bg-zinc-800"
+                >
+                  <Edit2 size={16} />
+                </button>
+              </div>
+            ))
+          )}
         </div>
+      </div>
 
-        <button
-          type="submit"
-          className="w-full bg-accent text-primary font-medium py-2 rounded-lg hover:bg-accent-hover transition-colors mt-2"
-        >
-          Save Settings
-        </button>
-      </form>
+      <div className="pt-4 border-t border-zinc-800">
+        <div className="flex justify-between items-end">
+          <p className="text-sm text-text-muted">Total for Cycle</p>
+          <p className="text-2xl font-bold text-accent">{formatCurrency(totalIncome)}</p>
+        </div>
+      </div>
+
+      <IncomeSourceModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        source={selectedSource}
+      />
     </Card>
   );
 }

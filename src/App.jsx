@@ -5,8 +5,11 @@ import TabNavigation from './components/layout/TabNavigation';
 import HomeTab from './components/home/HomeTab';
 import SummaryTab from './components/summary/SummaryTab';
 import TransactionsTab from './components/transactions/TransactionsTab';
+import { useCycleCheck } from './hooks/useCycleCheck';
 
 function App() {
+  useCycleCheck(); // Global hook for cycle logic
+  
   const [activeTab, setActiveTab] = useState('home');
 
   return (
@@ -30,7 +33,7 @@ function App() {
       
       <header className="py-6 text-center">
         <h1 className="text-3xl font-bold tracking-tight text-text">
-          Budget<span className="text-accent">Vault</span>
+          My<span className="text-accent">Vault</span>
         </h1>
       </header>
 

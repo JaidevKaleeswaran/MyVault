@@ -9,8 +9,8 @@ export default function MainBalanceChart() {
   const moneyLeft = Math.max(0, totalIncome - totalSpent);
   
   const data = [
-    { name: 'Money Left', value: moneyLeft, color: '#10b981' }, // Emerald
-    { name: 'Total Spent', value: totalSpent, color: '#facc15' }, // Yellow (Accent)
+    { name: 'Total Spent', value: Math.min(totalSpent, totalIncome), color: '#facc15' }, // Yellow (Accent)
+    { name: 'Remaining', value: Math.max(0, totalIncome - totalSpent), color: '#10b981' }, // Emerald
   ];
 
   // If no income and no spent, show empty state
@@ -47,9 +47,12 @@ export default function MainBalanceChart() {
               cy="50%"
               innerRadius={80}
               outerRadius={110}
-              paddingAngle={5}
+              paddingAngle={0}
+              startAngle={90}
+              endAngle={-270}
               dataKey="value"
               stroke="none"
+              cornerRadius={0}
             >
               {data.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={entry.color} />

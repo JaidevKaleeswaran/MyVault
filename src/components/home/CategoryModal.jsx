@@ -9,6 +9,7 @@ export default function CategoryModal({ isOpen, onClose, category = null }) {
     name: '',
     limit: '',
     color: '#facc15',
+    endOfCycleAction: 'none',
   });
 
   const isEditing = !!category;
@@ -20,9 +21,10 @@ export default function CategoryModal({ isOpen, onClose, category = null }) {
           name: category.name,
           limit: category.limit,
           color: category.color || '#facc15',
+          endOfCycleAction: category.endOfCycleAction || 'none',
         });
       } else {
-        setFormData({ name: '', limit: '', color: '#facc15' });
+        setFormData({ name: '', limit: '', color: '#facc15', endOfCycleAction: 'none' });
       }
     }
   }, [isOpen, category]);
@@ -39,6 +41,7 @@ export default function CategoryModal({ isOpen, onClose, category = null }) {
       name: formData.name,
       limit: Number(formData.limit),
       color: formData.color,
+      endOfCycleAction: formData.endOfCycleAction,
     };
 
     if (isEditing) {
@@ -107,6 +110,20 @@ export default function CategoryModal({ isOpen, onClose, category = null }) {
             />
             <span className="text-sm text-text-muted">{formData.color}</span>
           </div>
+        </div>
+
+        <div>
+          <label className="block text-sm text-text-muted mb-1">End of Cycle Action</label>
+          <select
+            name="endOfCycleAction"
+            value={formData.endOfCycleAction}
+            onChange={handleChange}
+            className="w-full bg-[#09090b] border border-zinc-700 rounded-lg px-3 py-2 text-text focus:outline-none focus:border-accent transition-colors"
+          >
+            <option value="none">None (Reset)</option>
+            <option value="rollover">Rollover Unspent</option>
+            <option value="sweep">Sweep to Savings</option>
+          </select>
         </div>
 
         <div className="pt-4 flex space-x-3">

@@ -1,16 +1,15 @@
-import React, { createContext, useReducer, useEffect, useContext } from 'react';
+import React, { createContext, useReducer, useContext } from 'react';
+import { normalizeToMasterCycle, getCycleWindow, isWithinCycle } from '../utils/cycleUtils';
 
 // Initial state with some default categories for demonstration
 const initialState = {
-  incomeInfo: {
-    amount: 0,
-    frequency: 'monthly', // weekly, bi-weekly, monthly, one-time
-    isBorrowed: false,
-  },
+  incomeSources: [],
+  cycleStartDate: null, // ISO date string — anchor for pay-cycle window
+  cycleFrequency: 'monthly', // The master cycle the budget operates on
   categories: [
-    { id: '1', name: 'Bills', limit: 1000, color: '#facc15' }, // yellow
-    { id: '2', name: 'Groceries', limit: 400, color: '#10b981' }, // emerald
-    { id: '3', name: 'Entertainment', limit: 200, color: '#06b6d4' }, // cyan
+    { id: '1', name: 'Bills', limit: 1000, color: '#facc15', endOfCycleAction: 'none' },
+    { id: '2', name: 'Groceries', limit: 400, color: '#10b981', endOfCycleAction: 'none' },
+    { id: '3', name: 'Entertainment', limit: 200, color: '#06b6d4', endOfCycleAction: 'none' },
   ],
   transactions: [],
 };
@@ -19,8 +18,26 @@ const BudgetContext = createContext();
 
 function budgetReducer(state, action) {
   switch (action.type) {
-    case 'SET_INCOME_INFO':
-      return { ...state, incomeInfo: { ...state.incomeInfo, ...action.payload } };
+    case 'ADD_INCOME_SOURCE':
+      return { ...state, incomeSources: [...state.incomeSources, action.payload] };
+    case 'UPDATE_INCOME_SOURCE':
+      return {
+        ...state,
+        incomeSources: state.incomeSources.map((source) =>
+          source.id === action.payload.id ? { ...source, ...action.payload } : source
+        ),
+      };
+    case 'DELETE_INCOME_SOURCE':
+      return {
+        ...state,
+        incomeSources: state.incomeSources.filter((source) => source.id !== action.payload),
+      };
+    case 'SET_CYCLE_CONFIG':
+      return {
+        ...state,
+        cycleStartDate: action.payload.cycleStartDate !== undefined ? action.payload.cycleStartDate : state.cycleStartDate,
+        cycleFrequency: action.payload.cycleFrequency !== undefined ? action.payload.cycleFrequency : state.cycleFrequency,
+      };
     case 'ADD_CATEGORY':
       return { ...state, categories: [...state.categories, action.payload] };
     case 'UPDATE_CATEGORY':
@@ -34,7 +51,11 @@ function budgetReducer(state, action) {
       return {
         ...state,
         categories: state.categories.filter((cat) => cat.id !== action.payload),
-        // optionally remove transactions for this category or mark them as uncategorized
+      };
+    case 'REPLACE_CATEGORIES': // Used by Quick-Fill (if replacing) or merging (if handled outside)
+      return {
+        ...state,
+        categories: action.payload,
       };
     case 'ADD_TRANSACTION':
       return { ...state, transactions: [action.payload, ...state.transactions] };
@@ -60,14 +81,25 @@ function budgetReducer(state, action) {
 export function BudgetProvider({ children }) {
   const [state, dispatch] = useReducer(budgetReducer, initialState);
 
-  // Calculate totals
-  const totalIncome = state.incomeInfo.amount;
-  const totalSpent = state.transactions.reduce((sum, tx) => sum + Number(tx.amount), 0);
+  // Calculate normalized total income
+  const totalIncome = state.incomeSources.reduce((sum, source) => {
+    return sum + normalizeToMasterCycle(source.amount, source.frequency, state.cycleFrequency);
+  }, 0);
+
+  // Determine current cycle window
+  const cycleWindow = getCycleWindow(state.cycleStartDate, state.cycleFrequency);
+
+  // Filter transactions to the current cycle
+  const currentCycleTransactions = state.transactions.filter(tx => isWithinCycle(tx.date, cycleWindow));
+
+  // Calculate totals for the current cycle
+  const totalSpent = currentCycleTransactions.reduce((sum, tx) => sum + Number(tx.amount), 0);
   const totalAllocated = state.categories.reduce((sum, cat) => sum + Number(cat.limit), 0);
-  
-  // Calculate spent per category
+  const leftToBudget = totalIncome - totalAllocated;
+
+  // Calculate spent per category for the current cycle
   const categorySpending = state.categories.reduce((acc, cat) => {
-    acc[cat.id] = state.transactions
+    acc[cat.id] = currentCycleTransactions
       .filter((tx) => tx.categoryId === cat.id)
       .reduce((sum, tx) => sum + Number(tx.amount), 0);
     return acc;
@@ -79,7 +111,9 @@ export function BudgetProvider({ children }) {
     totalIncome,
     totalSpent,
     totalAllocated,
+    leftToBudget,
     categorySpending,
+    currentCycleWindow: cycleWindow,
   };
 
   return <BudgetContext.Provider value={value}>{children}</BudgetContext.Provider>;
