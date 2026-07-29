@@ -4,7 +4,7 @@ export default function TabNavigation({ activeTab, setActiveTab }) {
   const tabs = [
     { id: 'home', label: 'Home' },
     { id: 'summary', label: 'Summary' },
-    { id: 'transactions', label: 'Transaction History' },
+    { id: 'transactions', label: 'Transactions' },
   ];
 
   return (

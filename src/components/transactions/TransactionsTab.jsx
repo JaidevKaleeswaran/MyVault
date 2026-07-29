@@ -36,7 +36,7 @@ export default function TransactionsTab() {
   return (
     <Card className="min-h-[500px]">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold text-text">Transaction History</h2>
+        <h2 className="text-xl font-semibold text-text">Transactions</h2>
         <button
           onClick={handleAddClick}
           className="flex items-center space-x-1 text-sm bg-accent text-primary px-3 py-1.5 rounded-lg hover:bg-accent-hover transition-colors font-medium"
