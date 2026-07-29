@@ -5,6 +5,7 @@ import HomeTab from './components/home/HomeTab';
 import SummaryTab from './components/summary/SummaryTab';
 import TransactionsTab from './components/transactions/TransactionsTab';
 import LoginPage from './components/auth/LoginPage';
+import VerifyEmailPage from './components/auth/VerifyEmailPage';
 import { useCycleCheck } from './hooks/useCycleCheck';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LogOut } from 'lucide-react';
@@ -16,6 +17,10 @@ function MainApp() {
 
   if (!user) {
     return <LoginPage />;
+  }
+
+  if (!user.emailVerified && !user.isGuest) {
+    return <VerifyEmailPage />;
   }
 
   return (

@@ -33,15 +33,20 @@ export default function LoginPage() {
     setLoading(true);
     try {
       if (isSignUp) {
-        await signupWithEmail(formData.email, formData.password, formData.name);
-        toast.success('Account created successfully!');
+        const res = await signupWithEmail(formData.email, formData.password, formData.name);
+        if (res?.requiresActivation) {
+          toast.success('Account created! An activation link was sent to your email. Please check your inbox and click the link to activate your account.', { duration: 7000 });
+          setIsSignUp(false);
+        } else {
+          toast.success('Account created successfully!');
+        }
       } else {
         await loginWithEmail(formData.email, formData.password);
         toast.success('Welcome back to MyVault!');
       }
     } catch (err) {
       console.error(err);
-      toast.error(err.message || 'Authentication failed');
+      toast.error(err.message || 'Authentication failed', { duration: 6000 });
     } finally {
       setLoading(false);
     }
@@ -116,7 +121,7 @@ export default function LoginPage() {
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
-                    placeholder="Jaidev K"
+                    placeholder="John Doe"
                     className="w-full bg-[#09090b] border border-zinc-800 rounded-lg pl-10 pr-4 py-2.5 text-text focus:outline-none focus:border-accent transition-colors text-sm"
                     required={isSignUp}
                   />
