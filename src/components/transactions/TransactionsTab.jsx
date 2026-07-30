@@ -3,12 +3,14 @@ import { useBudget } from '../../contexts/BudgetContext';
 import { Card } from '../ui/Card';
 import { formatCurrency } from '../../utils/formatCurrency';
 import TransactionModal from './TransactionModal';
-import { Plus, Edit2 } from 'lucide-react';
+import ReceiptScannerModal from './ReceiptScannerModal';
+import { Plus, Edit2, Sparkles, Receipt } from 'lucide-react';
 
 export default function TransactionsTab() {
   const { transactions, categories } = useBudget();
   const [selectedTx, setSelectedTx] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
 
   const getCategoryName = (id) => {
     const cat = categories.find(c => c.id === id);
@@ -37,13 +39,22 @@ export default function TransactionsTab() {
     <Card className="min-h-[500px]">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-semibold text-text">Transactions</h2>
-        <button
-          onClick={handleAddClick}
-          className="flex items-center space-x-1 text-sm bg-accent text-primary px-3 py-1.5 rounded-lg hover:bg-accent-hover transition-colors font-medium"
-        >
-          <Plus size={16} />
-          <span>Add Transaction</span>
-        </button>
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => setIsScannerOpen(true)}
+            className="flex items-center space-x-1.5 text-sm bg-purple-500/15 text-purple-300 border border-purple-500/30 px-3 py-1.5 rounded-lg hover:bg-purple-500/25 transition-colors font-medium"
+          >
+            <Sparkles size={16} className="text-purple-400" />
+            <span>Scan Receipt</span>
+          </button>
+          <button
+            onClick={handleAddClick}
+            className="flex items-center space-x-1 text-sm bg-accent text-primary px-3 py-1.5 rounded-lg hover:bg-accent-hover transition-colors font-medium"
+          >
+            <Plus size={16} />
+            <span>Add Transaction</span>
+          </button>
+        </div>
       </div>
 
       <div className="overflow-x-auto">
@@ -70,8 +81,16 @@ export default function TransactionsTab() {
                 <td className="py-4 px-4 text-text-muted whitespace-nowrap">
                   {new Date(tx.date).toLocaleDateString()}
                 </td>
-                <td className="py-4 px-4 text-text font-medium">
-                  {tx.description}
+                <td className="py-4 px-4 text-text font-medium flex items-center space-x-2">
+                  <span>{tx.description}</span>
+                  {tx.source === 'receipt_scan' && (
+                    <span
+                      title="Scanned from receipt"
+                      className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-purple-500/10 text-purple-400 border border-purple-500/20"
+                    >
+                      <Receipt size={10} className="mr-1" /> Receipt
+                    </span>
+                  )}
                 </td>
                 <td className="py-4 px-4">
                   <span 
@@ -103,6 +122,12 @@ export default function TransactionsTab() {
         onClose={() => setIsModalOpen(false)}
         transaction={selectedTx}
       />
+
+      <ReceiptScannerModal
+        isOpen={isScannerOpen}
+        onClose={() => setIsScannerOpen(false)}
+      />
     </Card>
   );
 }
+

@@ -57,8 +57,15 @@ function budgetReducer(state, action) {
         ...state,
         categories: action.payload,
       };
-    case 'ADD_TRANSACTION':
-      return { ...state, transactions: [action.payload, ...state.transactions] };
+    case 'ADD_TRANSACTION': {
+      const newTx = {
+        receipt_image_url: null,
+        line_items: null,
+        source: 'manual',
+        ...action.payload, // caller can override defaults (e.g. source: 'receipt_scan')
+      };
+      return { ...state, transactions: [newTx, ...state.transactions] };
+    }
     case 'UPDATE_TRANSACTION':
       return {
         ...state,
