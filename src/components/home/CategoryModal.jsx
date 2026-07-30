@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Modal } from '../ui/Modal';
 import { useBudget } from '../../contexts/BudgetContext';
+import { Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function CategoryModal({ isOpen, onClose, category = null }) {
@@ -138,9 +139,10 @@ export default function CategoryModal({ isOpen, onClose, category = null }) {
             <button
               type="button"
               onClick={handleDelete}
-              className="px-4 bg-red-500/10 text-red-500 border border-red-500/20 font-medium py-2 rounded-lg hover:bg-red-500/20 transition-colors"
+              className="px-4 bg-red-500/10 text-red-500 border border-red-500/20 font-medium py-2 rounded-lg hover:bg-red-500/20 transition-colors flex items-center justify-center space-x-1.5"
             >
-              Delete
+              <Trash2 size={16} />
+              <span>Delete Category</span>
             </button>
           )}
         </div>

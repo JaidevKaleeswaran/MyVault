@@ -4,6 +4,7 @@ import TabNavigation from './components/layout/TabNavigation';
 import HomeTab from './components/home/HomeTab';
 import SummaryTab from './components/summary/SummaryTab';
 import TransactionsTab from './components/transactions/TransactionsTab';
+import AIAssistantTab from './components/assistant/AIAssistantTab';
 import LoginPage from './components/auth/LoginPage';
 import VerifyEmailPage from './components/auth/VerifyEmailPage';
 import { useCycleCheck } from './hooks/useCycleCheck';
@@ -13,7 +14,7 @@ import { LogOut } from 'lucide-react';
 function MainApp() {
   useCycleCheck(); // Global hook for cycle logic
   const { user, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState('home');
+  const [activeTab, setActiveTab] = useState('assistant');
 
   if (!user) {
     return <LoginPage />;
@@ -65,6 +66,7 @@ function MainApp() {
       <main className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
         <div className="animate-in fade-in duration-300">
           {activeTab === 'home' && <HomeTab />}
+          {activeTab === 'assistant' && <AIAssistantTab />}
           {activeTab === 'summary' && <SummaryTab />}
           {activeTab === 'transactions' && <TransactionsTab />}
         </div>

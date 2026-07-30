@@ -1,8 +1,10 @@
 import React from 'react';
+import { Sparkles } from 'lucide-react';
 
 export default function TabNavigation({ activeTab, setActiveTab }) {
   const tabs = [
     { id: 'home', label: 'Home' },
+    { id: 'assistant', label: 'AI Assistant', isAi: true },
     { id: 'summary', label: 'Summary' },
     { id: 'transactions', label: 'Transactions' },
   ];
@@ -20,7 +22,10 @@ export default function TabNavigation({ activeTab, setActiveTab }) {
                 : 'text-text-muted hover:text-text'
             }`}
           >
-            {tab.label}
+            <span className="flex items-center gap-1.5">
+              {tab.isAi && <Sparkles size={15} className="text-accent animate-pulse" />}
+              {tab.label}
+            </span>
             {activeTab === tab.id && (
               <span className="absolute bottom-0 left-0 w-full h-0.5 bg-accent rounded-t-md"></span>
             )}

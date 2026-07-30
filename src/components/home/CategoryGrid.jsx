@@ -3,7 +3,7 @@ import { useBudget } from '../../contexts/BudgetContext';
 import { Card } from '../ui/Card';
 import CategoryModal from './CategoryModal';
 import { formatCurrency } from '../../utils/formatCurrency';
-import { Plus, Edit2, ChevronDown } from 'lucide-react';
+import { Plus, Edit2, Trash2, ChevronDown } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function CategoryGrid() {
@@ -20,6 +20,14 @@ export default function CategoryGrid() {
   const handleEditClick = (category) => {
     setSelectedCategory(category);
     setIsModalOpen(true);
+  };
+
+  const handleDeleteClick = (e, category) => {
+    e.stopPropagation();
+    if (window.confirm(`Are you sure you want to delete "${category.name}"?`)) {
+      dispatch({ type: 'DELETE_CATEGORY', payload: category.id });
+      toast.success('Category deleted');
+    }
   };
 
   const handleQuickFill = (templateType) => {
@@ -127,12 +135,24 @@ export default function CategoryGrid() {
                   <div className="w-3 h-3 rounded-full" style={{ backgroundColor: category.color }} />
                   <h3 className="font-medium text-text">{category.name}</h3>
                 </div>
-                <button
-                  onClick={() => handleEditClick(category)}
-                  className="p-1.5 text-zinc-500 hover:text-accent opacity-0 group-hover:opacity-100 transition-all rounded-md hover:bg-zinc-800"
-                >
-                  <Edit2 size={16} />
-                </button>
+                <div className="flex items-center space-x-1">
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); handleEditClick(category); }}
+                    title="Edit Category"
+                    className="p-1.5 text-zinc-400 hover:text-accent sm:opacity-0 sm:group-hover:opacity-100 transition-all rounded-md hover:bg-zinc-800 focus:opacity-100"
+                  >
+                    <Edit2 size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => handleDeleteClick(e, category)}
+                    title="Delete Category"
+                    className="p-1.5 text-zinc-400 hover:text-red-400 sm:opacity-0 sm:group-hover:opacity-100 transition-all rounded-md hover:bg-red-500/10 focus:opacity-100"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-1 mb-4 pl-2 flex-grow">

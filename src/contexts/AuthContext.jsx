@@ -19,9 +19,26 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      return saved ? JSON.parse(saved) : null;
+      if (saved) return JSON.parse(saved);
+      const defaultUser = {
+        uid: 'usr_vault_guest',
+        email: 'guest@myvault.app',
+        displayName: 'Guest User',
+        photoURL: null,
+        emailVerified: true,
+        isGuest: true,
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultUser));
+      return defaultUser;
     } catch (e) {
-      return null;
+      return {
+        uid: 'usr_vault_guest',
+        email: 'guest@myvault.app',
+        displayName: 'Guest User',
+        photoURL: null,
+        emailVerified: true,
+        isGuest: true,
+      };
     }
   });
 
