@@ -32,7 +32,35 @@ function budgetReducer(state, action) {
         ...state,
         incomeSources: state.incomeSources.filter((source) => source.id !== action.payload),
       };
+    case 'SET_SALARY': {
+      const salarySource = {
+        id: action.payload.id || 'salary_source',
+        name: action.payload.name || 'Primary Salary',
+        amount: Number(action.payload.amount),
+        frequency: action.payload.frequency || 'monthly',
+        isBorrowed: false,
+        isSalary: true,
+      };
+
+      const existingIndex = state.incomeSources.findIndex(
+        (s) => s.isSalary || s.id === 'salary_source' || s.name.toLowerCase() === 'primary salary' || s.name.toLowerCase() === 'salary'
+      );
+
+      let updatedSources;
+      if (existingIndex >= 0) {
+        updatedSources = [...state.incomeSources];
+        updatedSources[existingIndex] = { ...updatedSources[existingIndex], ...salarySource };
+      } else {
+        updatedSources = [salarySource, ...state.incomeSources];
+      }
+
+      return {
+        ...state,
+        incomeSources: updatedSources,
+      };
+    }
     case 'SET_CYCLE_CONFIG':
+
       return {
         ...state,
         cycleStartDate: action.payload.cycleStartDate !== undefined ? action.payload.cycleStartDate : state.cycleStartDate,
@@ -112,9 +140,15 @@ export function BudgetProvider({ children }) {
     return acc;
   }, {});
 
+  // Find primary salary income source if present
+  const primarySalary = state.incomeSources.find(
+    (s) => s.isSalary || s.id === 'salary_source' || s.name?.toLowerCase() === 'primary salary' || s.name?.toLowerCase() === 'salary'
+  ) || null;
+
   const value = {
     ...state,
     dispatch,
+    primarySalary,
     totalIncome,
     totalSpent,
     totalAllocated,
@@ -122,6 +156,7 @@ export function BudgetProvider({ children }) {
     categorySpending,
     currentCycleWindow: cycleWindow,
   };
+
 
   return <BudgetContext.Provider value={value}>{children}</BudgetContext.Provider>;
 }

@@ -11,7 +11,8 @@
     "server": "node server/index.js"
   },
   "dependencies": {
-    "@google/genai": "^2.14.0",
+    "@elevenlabs/elevenlabs-js": "^2.60.0",
+    "@google/genai": "^2.15.0",
     "@tailwindcss/vite": "^4.3.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",

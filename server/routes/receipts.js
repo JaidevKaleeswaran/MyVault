@@ -53,9 +53,9 @@ const upload = multer({
 });
 
 // ---------------------------------------------------------------------------
-// Gemini API helper
+// Vision AI prompts & helpers
 // ---------------------------------------------------------------------------
-const GEMINI_PROMPT = `You are a receipt-parsing assistant. Analyze the provided receipt image and extract the data into JSON.
+const RECEIPT_PROMPT = `You are a receipt-parsing assistant. Analyze the provided receipt image and extract the data into JSON.
 
 Return ONLY valid JSON (no markdown fences, no commentary) with this exact shape:
 {
@@ -76,6 +76,60 @@ Rules:
 - Each line item must have a name, unit price, and quantity (default 1 if not shown).
 - "suggested_category" should be one of: Groceries, Dining, Entertainment, Bills, Shopping, Transport, Health, Education, Other.
 - Do NOT guess values. If a field is unreadable, set it to null (for nullable fields) or omit the line item.`;
+
+async function parseReceiptWithOpenAI(imagePath) {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    throw Object.assign(new Error('OPENAI_API_KEY environment variable is not set'), {
+      code: 'MISSING_API_KEY',
+    });
+  }
+
+  const imageBuffer = fs.readFileSync(imagePath);
+  const base64Image = imageBuffer.toString('base64');
+  const mimeType = imagePath.endsWith('.png')
+    ? 'image/png'
+    : imagePath.endsWith('.webp')
+      ? 'image/webp'
+      : 'image/jpeg';
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: RECEIPT_PROMPT },
+            {
+              type: 'image_url',
+              image_url: {
+                url: `data:${mimeType};base64,${base64Image}`,
+              },
+            },
+          ],
+        },
+      ],
+      response_format: { type: 'json_object' },
+      max_tokens: 1000,
+    }),
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`OpenAI Vision API error (${response.status}): ${errText}`);
+  }
+
+  const json = await response.json();
+  const rawText = json.choices?.[0]?.message?.content?.trim();
+  if (!rawText) throw new Error('OpenAI returned empty response.');
+  return rawText;
+}
 
 async function parseReceiptWithGemini(imagePath) {
   const apiKey = process.env.GEMINI_API_KEY;
@@ -107,7 +161,7 @@ async function parseReceiptWithGemini(imagePath) {
           {
             role: 'user',
             parts: [
-              { text: GEMINI_PROMPT },
+              { text: RECEIPT_PROMPT },
               {
                 inlineData: {
                   mimeType,
@@ -129,6 +183,7 @@ async function parseReceiptWithGemini(imagePath) {
 
   throw lastError || new Error('All Gemini models failed to process the image.');
 }
+
 
 // ---------------------------------------------------------------------------
 // Validation
@@ -195,14 +250,28 @@ router.post('/scan', (req, res, next) => {
       });
     }
 
-    // ── Call Gemini ────────────────────────────────────────────────────
+    // ── Call Vision AI (OpenAI Primary, Gemini Fallback) ───────────────
     const imagePath = req.file.path;
     const receipt_image_url = `/uploads/${req.file.filename}`;
 
     try {
-      const rawJson = await parseReceiptWithGemini(imagePath);
+      let rawJson;
+      let engine = 'openai';
 
-      // Strip markdown fences if Gemini wraps them anyway
+      if (process.env.OPENAI_API_KEY) {
+        try {
+          rawJson = await parseReceiptWithOpenAI(imagePath);
+        } catch (openAiErr) {
+          console.warn('OpenAI Vision API failed, falling back to Gemini:', openAiErr.message);
+          engine = 'gemini';
+          rawJson = await parseReceiptWithGemini(imagePath);
+        }
+      } else {
+        engine = 'gemini';
+        rawJson = await parseReceiptWithGemini(imagePath);
+      }
+
+      // Strip markdown fences if AI wraps them anyway
       const cleaned = rawJson.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');
 
       let parsed;
@@ -210,7 +279,7 @@ router.post('/scan', (req, res, next) => {
         parsed = JSON.parse(cleaned);
       } catch (parseErr) {
         return res.status(422).json({
-          error: 'Failed to parse Gemini response as JSON',
+          error: 'Failed to parse AI response as JSON',
           message: 'The AI returned an unparseable response. Please try again with a clearer receipt image.',
           raw_response: rawJson,
         });
@@ -226,9 +295,10 @@ router.post('/scan', (req, res, next) => {
         });
       }
 
-      // ── Success — return parsed data (do NOT save to transactions) ─
+      // ── Success — return parsed data ─────────────────────────────
       return res.status(200).json({
         receipt_image_url,
+        engine,
         data: {
           merchant: parsed.merchant,
           date: parsed.date,
@@ -240,14 +310,15 @@ router.post('/scan', (req, res, next) => {
         },
       });
     } catch (apiErr) {
-      console.error('Gemini API error:', apiErr);
+      console.error('Receipt Vision API error:', apiErr);
 
       if (apiErr.code === 'MISSING_API_KEY') {
         return res.status(500).json({
           error: 'Server configuration error',
-          message: 'GEMINI_API_KEY is not configured. Please set it in your .env file.',
+          message: 'Neither OPENAI_API_KEY nor GEMINI_API_KEY is configured.',
         });
       }
+
 
       // Extract detailed error message from Google API response
       let userFriendlyMessage = apiErr.message || 'The AI service failed to process the receipt.';

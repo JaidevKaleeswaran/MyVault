@@ -214,9 +214,14 @@ export function AuthProvider({ children }) {
 
   const resendVerificationEmail = async () => {
     if (auth && auth.currentUser) {
-      await sendEmailVerification(auth.currentUser);
+      const actionCodeSettings = {
+        url: window.location.origin,
+        handleCodeInApp: true,
+      };
+      await sendEmailVerification(auth.currentUser, actionCodeSettings);
     }
   };
+
 
   const refreshUserStatus = async () => {
     if (auth && auth.currentUser) {

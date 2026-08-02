@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import receiptsRouter from './routes/receipts.js';
+import voiceRouter from './routes/voice.js';
 
 dotenv.config();
 
@@ -23,6 +24,7 @@ app.use('/uploads', express.static(path.join(PROJECT_ROOT, 'uploads')));
 
 // Routes
 app.use('/api/receipts', receiptsRouter);
+app.use('/api/voice', voiceRouter);
 
 // Health check
 app.get('/api/health', (_req, res) => {

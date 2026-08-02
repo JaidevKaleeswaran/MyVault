@@ -8,11 +8,13 @@ import AIAssistantTab from './components/assistant/AIAssistantTab';
 import LoginPage from './components/auth/LoginPage';
 import VerifyEmailPage from './components/auth/VerifyEmailPage';
 import { useCycleCheck } from './hooks/useCycleCheck';
+import { useFirebaseSync } from './hooks/useFirebaseSync';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LogOut } from 'lucide-react';
 
 function MainApp() {
   useCycleCheck(); // Global hook for cycle logic
+  useFirebaseSync(); // Global hook for syncing budget to Firestore
   const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState('assistant');
 

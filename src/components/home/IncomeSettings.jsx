@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useBudget } from '../../contexts/BudgetContext';
 import { Card } from '../ui/Card';
-import { Edit2, Plus } from 'lucide-react';
+import { Edit2, Plus, DollarSign, Briefcase, Sparkles } from 'lucide-react';
 import { formatCurrency } from '../../utils/formatCurrency';
 import IncomeSourceModal from './IncomeSourceModal';
+import SalaryModal from './SalaryModal';
 
 export default function IncomeSettings() {
-  const { incomeSources, cycleStartDate, cycleFrequency, totalIncome, dispatch } = useBudget();
+  const { incomeSources, primarySalary, cycleStartDate, cycleFrequency, totalIncome, dispatch } = useBudget();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSalaryModalOpen, setIsSalaryModalOpen] = useState(false);
   const [selectedSource, setSelectedSource] = useState(null);
 
   const [cycleConfig, setCycleConfig] = useState({
@@ -48,6 +50,40 @@ export default function IncomeSettings() {
 
   return (
     <Card className="h-full flex flex-col space-y-6">
+      {/* Primary Salary Featured Box */}
+      <div className="bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-transparent border border-emerald-500/25 rounded-xl p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <div className="p-2 bg-emerald-500/20 text-emerald-400 rounded-lg">
+              <Briefcase size={18} />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-text flex items-center gap-1.5">
+                Primary Salary
+                <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.2 rounded font-medium">Main</span>
+              </h3>
+              <p className="text-xs text-text-muted">
+                {primarySalary ? `${primarySalary.name} • ${primarySalary.frequency}` : 'No base salary configured'}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setIsSalaryModalOpen(true)}
+            className="flex items-center space-x-1 text-xs bg-emerald-500 text-black px-3 py-1.5 rounded-lg hover:bg-emerald-400 transition-colors font-semibold shadow-sm"
+          >
+            <DollarSign size={14} />
+            <span>{primarySalary ? 'Edit Salary' : 'Set Salary'}</span>
+          </button>
+        </div>
+
+        {primarySalary && (
+          <div className="pt-2 border-t border-emerald-500/20 flex justify-between items-baseline">
+            <span className="text-xs text-zinc-400">Salary Amount</span>
+            <span className="text-lg font-bold text-emerald-400">{formatCurrency(primarySalary.amount)} <span className="text-xs font-normal text-zinc-400">/ {primarySalary.frequency}</span></span>
+          </div>
+        )}
+      </div>
+
       <div>
         <h2 className="text-xl font-semibold text-text mb-4">Cycle Configuration</h2>
         <div className="space-y-4">
@@ -100,6 +136,11 @@ export default function IncomeSettings() {
                 <div>
                   <div className="flex items-center space-x-2">
                     <h3 className="font-medium text-sm text-text">{source.name}</h3>
+                    {source.isSalary && (
+                      <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-500/20">
+                        Salary
+                      </span>
+                    )}
                     {source.isBorrowed && (
                       <span className="text-[10px] bg-red-500/10 text-red-500 px-1.5 py-0.5 rounded border border-red-500/20">
                         Debt
@@ -134,6 +175,12 @@ export default function IncomeSettings() {
         onClose={() => setIsModalOpen(false)}
         source={selectedSource}
       />
+
+      <SalaryModal
+        isOpen={isSalaryModalOpen}
+        onClose={() => setIsSalaryModalOpen(false)}
+      />
     </Card>
   );
 }
+

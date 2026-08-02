@@ -62,9 +62,24 @@ export default function VerifyEmailPage() {
             </div>
             <ol className="list-decimal list-inside text-xs text-zinc-400 space-y-1.5 pl-1">
               <li>Open your email inbox for <strong className="text-zinc-200">{user?.email}</strong></li>
-              <li>Click the activation link inside the email from Firebase</li>
+              <li>Click the activation link inside the email from <strong>MyVault / Firebase</strong></li>
               <li>Return here and click <strong>"I've Activated My Account"</strong></li>
             </ol>
+          </div>
+
+          {/* Spam Prevention & Inbox Tips Box */}
+          <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3.5 space-y-2 text-xs text-amber-300">
+            <p className="font-semibold flex items-center gap-1 text-amber-400">
+              📬 Email in Spam / Junk folder?
+            </p>
+            <p className="text-amber-200/90 leading-relaxed text-[11px]">
+              Verification emails from <code className="bg-black/40 px-1 py-0.5 rounded text-amber-300">noreply@myvault-rho.firebaseapp.com</code> are sometimes flagged by Spam filters (Gmail, Outlook, Yahoo).
+            </p>
+            <ul className="list-disc list-inside text-[11px] text-amber-200/80 space-y-1 pl-1">
+              <li>Check your <strong>Spam / Junk / Promotions</strong> folder</li>
+              <li>Click <strong>"Report Not Spam"</strong> or move it to your Main Inbox</li>
+              <li>Add our sender address to your email contacts to prevent future spam flags</li>
+            </ul>
           </div>
 
           <div className="space-y-3 pt-2">
@@ -97,6 +112,7 @@ export default function VerifyEmailPage() {
             </button>
           </div>
         </Card>
+
       </div>
     </div>
   );

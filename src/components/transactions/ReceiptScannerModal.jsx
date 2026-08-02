@@ -1,11 +1,14 @@
 import React, { useState, useRef } from 'react';
 import { Modal } from '../ui/Modal';
 import { useBudget } from '../../contexts/BudgetContext';
+import { processTransaction } from '../../services/agents/managerAgent';
+import { speakTransactionDetails } from '../../services/agents/voiceAgent';
 import toast from 'react-hot-toast';
-import { Upload, Sparkles, Loader2, CheckCircle2, FileText, AlertCircle } from 'lucide-react';
+import { Upload, Sparkles, Loader2, CheckCircle2, FileText, AlertCircle, Bot, Volume2 } from 'lucide-react';
 
 export default function ReceiptScannerModal({ isOpen, onClose }) {
-  const { categories, dispatch } = useBudget();
+  const budgetState = useBudget();
+  const { categories, dispatch } = budgetState;
   
   const fileInputRef = useRef(null);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -13,6 +16,7 @@ export default function ReceiptScannerModal({ isOpen, onClose }) {
   const [isScanning, setIsScanning] = useState(false);
   const [scanResult, setScanResult] = useState(null);
   const [scanError, setScanError] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const [formData, setFormData] = useState({
     amount: '',
@@ -28,6 +32,7 @@ export default function ReceiptScannerModal({ isOpen, onClose }) {
     setIsScanning(false);
     setScanResult(null);
     setScanError(null);
+    setIsSaving(false);
     setFormData({
       amount: '',
       categoryId: categories.length > 0 ? categories[0].id : '',
@@ -88,7 +93,7 @@ export default function ReceiptScannerModal({ isOpen, onClose }) {
       setScanResult(json);
       toast.success('Receipt scanned successfully!');
 
-      // Match suggested category with existing categories
+      // Use the Manager Agent's AI categorization to match the category
       let matchedCategoryId = categories.length > 0 ? categories[0].id : '';
       if (json.data?.suggested_category) {
         const found = categories.find(
@@ -112,27 +117,45 @@ export default function ReceiptScannerModal({ isOpen, onClose }) {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.categoryId) {
-      toast.error('Please select a category');
-      return;
+    setIsSaving(true);
+
+    try {
+      // Use the Manager Agent to process and categorize the transaction
+      const result = await processTransaction(
+        {
+          description: formData.description,
+          amount: Number(formData.amount),
+          date: formData.date,
+          merchant: scanResult?.data?.merchant || formData.description,
+          lineItems: scanResult?.data?.line_items || null,
+        },
+        budgetState,
+        dispatch
+      );
+
+      toast.success(result.message || 'Transaction added from scanned receipt!');
+      handleClose();
+    } catch (err) {
+      console.error('Manager Agent error:', err);
+      // Fallback: dispatch directly
+      const payload = {
+        id: Date.now().toString(),
+        amount: Number(formData.amount),
+        categoryId: formData.categoryId,
+        description: formData.description,
+        date: formData.date,
+        receipt_image_url: scanResult?.receipt_image_url || null,
+        line_items: scanResult?.data?.line_items || null,
+        source: 'receipt_scan',
+      };
+      dispatch({ type: 'ADD_TRANSACTION', payload });
+      toast.success('Transaction added from scanned receipt!');
+      handleClose();
+    } finally {
+      setIsSaving(false);
     }
-
-    const payload = {
-      id: Date.now().toString(),
-      amount: Number(formData.amount),
-      categoryId: formData.categoryId,
-      description: formData.description,
-      date: formData.date,
-      receipt_image_url: scanResult?.receipt_image_url || null,
-      line_items: scanResult?.data?.line_items || null,
-      source: 'receipt_scan',
-    };
-
-    dispatch({ type: 'ADD_TRANSACTION', payload });
-    toast.success('Transaction added from scanned receipt!');
-    handleClose();
   };
 
   return (
@@ -205,13 +228,28 @@ export default function ReceiptScannerModal({ isOpen, onClose }) {
         ) : (
           /* Step 2: Review Parsed Receipt Data & Save */
           <form onSubmit={handleSubmit} className="space-y-4 animate-in fade-in duration-200">
-            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3 flex items-center space-x-2.5 text-xs text-emerald-400">
-              <CheckCircle2 size={18} className="shrink-0" />
-              <div>
-                <p className="font-semibold">Receipt Extracted Successfully</p>
-                <p className="text-emerald-400/80">Review extracted values before saving.</p>
+            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3 flex items-center justify-between text-xs text-emerald-400">
+              <div className="flex items-center space-x-2.5">
+                <CheckCircle2 size={18} className="shrink-0" />
+                <div>
+                  <p className="font-semibold">Receipt Extracted Successfully</p>
+                  <p className="text-emerald-400/80 flex items-center gap-1">
+                    <Bot size={10} />
+                    Manager Agent will auto-categorize this transaction
+                  </p>
+                </div>
               </div>
+              <button
+                type="button"
+                onClick={() => speakTransactionDetails({ description: formData.description, amount: formData.amount, date: formData.date })}
+                className="flex items-center gap-1 text-xs bg-violet-500/20 text-violet-300 hover:bg-violet-500/30 border border-violet-500/30 px-2.5 py-1 rounded-md transition-colors shrink-0"
+                title="Speak scanned receipt details with ElevenLabs voice"
+              >
+                <Volume2 size={14} />
+                <span>Speak</span>
+              </button>
             </div>
+
 
             {/* Line items preview if available */}
             {scanResult.data?.line_items && scanResult.data.line_items.length > 0 && (
@@ -297,9 +335,17 @@ export default function ReceiptScannerModal({ isOpen, onClose }) {
               </button>
               <button
                 type="submit"
-                className="flex-1 bg-accent text-primary font-medium py-2 rounded-lg hover:bg-accent-hover transition-colors text-sm"
+                disabled={isSaving}
+                className="flex-1 bg-accent text-primary font-medium py-2 rounded-lg hover:bg-accent-hover transition-colors text-sm disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                Save Transaction
+                {isSaving ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  'Save Transaction'
+                )}
               </button>
             </div>
           </form>

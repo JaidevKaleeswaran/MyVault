@@ -1,17 +1,39 @@
 import React from 'react';
 import { TrendingUp, DollarSign, PieChart, CreditCard } from 'lucide-react';
-import { detectSubscriptionsTool } from '../../services/rag/financialTools';
-import { adaptUserBudgetDataToRAG } from '../../services/rag/userDatasetAdapter';
 import { useBudget } from '../../contexts/BudgetContext';
-import { useAuth } from '../../contexts/AuthContext';
 import { formatCurrency } from '../../utils/formatCurrency';
+
+/**
+ * Detect recurring subscriptions from transactions (replaces RAG tool)
+ */
+function detectSubscriptions(transactions) {
+  const subKeywords = /netflix|spotify|equinox|gym|icloud|apple|hulu|disney|prime|amazon prime|utility|internet|wifi|youtube|hbo|paramount|subscription/i;
+
+  const subMap = new Map();
+  (transactions || []).forEach(tx => {
+    const desc = tx.description || '';
+    if (tx.recurring || subKeywords.test(desc)) {
+      if (!subMap.has(desc)) {
+        subMap.set(desc, { name: desc, amount: Number(tx.amount) || 0 });
+      }
+    }
+  });
+
+  const subs = Array.from(subMap.values());
+  const monthlyTotal = subs.reduce((sum, s) => sum + s.amount, 0);
+
+  return {
+    count: subs.length,
+    monthlyTotal,
+    formattedMonthlyTotal: formatCurrency(monthlyTotal),
+    subscriptions: subs,
+  };
+}
 
 export default function FinancialHealthCards() {
   const budgetState = useBudget();
-  const { user } = useAuth();
 
-  const userDataset = adaptUserBudgetDataToRAG(budgetState, user);
-  const subscriptions = detectSubscriptionsTool(userDataset);
+  const subscriptions = detectSubscriptions(budgetState.transactions);
 
   const totalIncome = budgetState.totalIncome || 0;
   const totalSpent = budgetState.totalSpent || 0;
@@ -63,9 +85,9 @@ export default function FinancialHealthCards() {
         <div>
           <p className="text-xs font-medium text-zinc-400">Active Subscriptions</p>
           <p className="text-xl font-bold text-purple-400 mt-1">
-            {subscriptions ? subscriptions.formattedMonthlyTotal : '$0.00'}
+            {subscriptions.formattedMonthlyTotal}
           </p>
-          <p className="text-[11px] text-zinc-500 mt-0.5">{subscriptions ? subscriptions.count : 0} Services</p>
+          <p className="text-[11px] text-zinc-500 mt-0.5">{subscriptions.count} Services</p>
         </div>
         <div className="p-3 bg-purple-500/10 rounded-lg text-purple-400">
           <CreditCard size={22} />
