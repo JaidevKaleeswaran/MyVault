@@ -201,12 +201,20 @@ async function parseReceiptWithOpenAI(imagePath) {
 }
 
 async function parseReceiptWithGemini(imagePath) {
-  const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_MANAGER_API_KEY || process.env.VITE_ASSISTANT_API_KEY;
+  // Use dedicated Receipt Scanner API Key first, then fallback to shared keys
+  const apiKey = process.env.RECEIPT_SCANNER_API_KEY
+    || process.env.GEMINI_API_KEY
+    || process.env.VITE_RECEIPT_SCANNER_API_KEY
+    || process.env.VITE_MANAGER_API_KEY
+    || process.env.VITE_ASSISTANT_API_KEY;
   if (!apiKey) {
-    throw Object.assign(new Error('GEMINI_API_KEY environment variable is not set'), {
+    throw Object.assign(new Error('No Gemini API key configured for receipt scanning. Set RECEIPT_SCANNER_API_KEY in .env'), {
       code: 'MISSING_API_KEY',
     });
   }
+
+  console.log('[Receipt Scanner] Using API key prefix:', apiKey.substring(0, 15) + '...');
+
 
   const ai = new GoogleGenAI({ apiKey });
 
@@ -325,62 +333,44 @@ router.post('/scan', (req, res, next) => {
 
     try {
       let parsedData = null;
-      let engine = 'pydantic_python';
+      let engine = 'gemini';
 
-      // 1. Try Pydantic python parser first
+      // Use Gemini Vision directly (the working API keys)
+      // Skip Python parser since Claude key has no credits
       try {
-        const pythonScriptPath = path.join(PROJECT_ROOT, 'server/python/receipt_parser.py');
-        const { stdout } = await execFileAsync('python3', [pythonScriptPath, imagePath]);
-        const pyResult = JSON.parse(stdout);
-        if (pyResult.success && pyResult.data) {
-          parsedData = pyResult.data;
+        const rawJson = await parseReceiptWithGemini(imagePath);
+        const cleaned = rawJson.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');
+        parsedData = JSON.parse(cleaned);
+        engine = 'gemini_vision';
+      } catch (geminiErr) {
+        console.warn('Gemini Vision failed:', geminiErr.message);
+        
+        // Try Claude as backup (in case user adds credits later)
+        const hasClaude = !!process.env.ANTHROPIC_API_KEY;
+        if (hasClaude) {
+          try {
+            const rawJson = await parseReceiptWithClaude(imagePath);
+            const cleaned = rawJson.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');
+            parsedData = JSON.parse(cleaned);
+            engine = 'claude_vision';
+          } catch (claudeErr) {
+            console.warn('Claude Vision also failed:', claudeErr.message);
+          }
         }
-      } catch (pyErr) {
-        console.warn('Pydantic python parser failed, using JS fallback:', pyErr.message);
       }
 
-      // 2. Fallback to JS Claude/Gemini/OpenAI if python parser didn't return data
+      // No mock data — return a real error if all APIs fail
       if (!parsedData) {
-        let rawJson;
-        const hasClaude = !!process.env.ANTHROPIC_API_KEY;
-        engine = hasClaude ? 'claude_3_5_sonnet' : 'gemini';
+        return res.status(502).json({
+          error: 'Receipt scanning failed',
+          message: 'All Vision AI services are unavailable or rate-limited. Please try again in a moment.',
+        });
+      }
 
-        try {
-          if (hasClaude) {
-            try {
-              rawJson = await parseReceiptWithClaude(imagePath);
-            } catch (claudeErr) {
-              console.warn('Claude Vision API failed, falling back to Gemini:', claudeErr.message);
-              engine = 'gemini';
-              rawJson = await parseReceiptWithGemini(imagePath);
-            }
-          } else {
-            engine = 'gemini';
-            rawJson = await parseReceiptWithGemini(imagePath);
-          }
-
-          const cleaned = rawJson.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');
-          parsedData = JSON.parse(cleaned);
-        } catch (visionErr) {
-          console.warn('Vision APIs rate limited or unavailable, generating fallback receipt:', visionErr.message);
-          engine = 'fallback_smart';
-          const filename = path.basename(imagePath, path.extname(imagePath));
-          const cleanName = filename.replace(/^receipt-/, '').replace(/\d+/g, '').replace(/[-_]/g, ' ').trim() || 'Store Purchase';
-          parsedData = {
-            merchant: cleanName.charAt(0).toUpperCase() + cleanName.slice(1),
-            date: new Date().toISOString().split('T')[0],
-            total: 24.50,
-            subtotal: 22.00,
-            tax: 2.50,
-            tip: null,
-            payment_method: 'Card',
-            line_items: [
-              { name: 'Scanned Item 1', price: 15.00, quantity: 1 },
-              { name: 'Scanned Item 2', price: 7.00, quantity: 1 }
-            ],
-            suggested_category: 'Groceries'
-          };
-        }
+      // Auto-fill missing date with today (receipts often have unreadable dates)
+      if (!parsedData.date || typeof parsedData.date !== 'string' || !parsedData.date.trim()) {
+        parsedData.date = new Date().toISOString().split('T')[0];
+        console.log('[Receipt Scanner] Date unreadable, defaulting to today:', parsedData.date);
       }
 
       // ── Validate required fields ──────────────────────────────────
