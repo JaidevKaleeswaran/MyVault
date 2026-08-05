@@ -1,5 +1,9 @@
 import express from 'express';
+import multer from 'multer';
+import { GoogleGenAI } from '@google/genai';
 import { ElevenLabsClient } from '@elevenlabs/elevenlabs-js';
+
+const uploadMemory = multer({ limits: { fileSize: 25 * 1024 * 1024 } });
 
 const router = express.Router();
 
@@ -141,5 +145,80 @@ router.post('/speak', async (req, res) => {
   }
 });
 
+/**
+ * POST /api/voice/transcribe
+ * Transcribes recorded microphone audio using Gemini 2.5 Flash AI
+ */
+router.post('/transcribe', uploadMemory.single('audio'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No audio file provided' });
+    }
+
+    const apiKey = process.env.RECEIPT_SCANNER_API_KEY
+      || process.env.GEMINI_API_KEY
+      || process.env.VITE_RECEIPT_SCANNER_API_KEY
+      || process.env.VITE_MANAGER_API_KEY
+      || process.env.VITE_ASSISTANT_API_KEY;
+
+    if (!apiKey) {
+      return res.status(500).json({ error: 'No Gemini API key configured for audio transcription' });
+    }
+
+    const ai = new GoogleGenAI({ apiKey });
+    const base64Audio = req.file.buffer.toString('base64');
+    const mimeType = req.file.mimetype || 'audio/webm';
+
+    const prompt = `Listen carefully to this spoken receipt audio recording.
+Extract what the user bought, the total amount spent, and the date of purchase.
+Return ONLY valid JSON (no markdown formatting) in this exact structure:
+{
+  "transcript": "Exact spoken text",
+  "merchant": "Merchant or Store Name or Description",
+  "amount": 0.00,
+  "date": "YYYY-MM-DD"
+}
+
+If the year/date is not mentioned, use today's date (${new Date().toISOString().split('T')[0]}).`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: [
+        {
+          role: 'user',
+          parts: [
+            { text: prompt },
+            {
+              inlineData: {
+                mimeType,
+                data: base64Audio,
+              },
+            },
+          ],
+        },
+      ],
+    });
+
+    const rawText = response.text?.trim() || '';
+    const cleaned = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');
+    const data = JSON.parse(cleaned);
+
+    return res.json({
+      success: true,
+      transcript: data.transcript || '',
+      merchant: data.merchant || 'Spoken Purchase',
+      amount: Number(data.amount) || 0,
+      date: data.date || new Date().toISOString().split('T')[0],
+    });
+  } catch (err) {
+    console.error('Audio transcription error:', err);
+    return res.status(502).json({
+      error: 'Failed to transcribe audio',
+      message: err.message,
+    });
+  }
+});
+
 export default router;
+
 
