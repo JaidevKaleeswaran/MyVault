@@ -16,7 +16,7 @@ function MainApp() {
   useCycleCheck(); // Global hook for cycle logic
   useFirebaseSync(); // Global hook for syncing budget to Firestore
   const { user, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState('assistant');
+  const [activeTab, setActiveTab] = useState('home');
 
   if (!user) {
     return <LoginPage />;

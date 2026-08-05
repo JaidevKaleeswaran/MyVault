@@ -73,6 +73,16 @@ export default function TransactionsTab() {
   // Sort transactions by date (newest first)
   const sortedTransactions = [...transactions].sort((a, b) => new Date(b.date) - new Date(a.date));
 
+  const formatDate = (dateStr) => {
+    if (!dateStr) return 'Today';
+    try {
+      const d = new Date(dateStr);
+      return !isNaN(d.getTime()) ? d.toLocaleDateString() : String(dateStr);
+    } catch {
+      return String(dateStr);
+    }
+  };
+
   return (
     <Card className="min-h-[500px] space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -131,7 +141,7 @@ export default function TransactionsTab() {
             {sortedTransactions.map(tx => (
               <tr key={tx.id} className="group hover:bg-[#09090b]/50 transition-colors">
                 <td className="py-4 px-4 text-text-muted whitespace-nowrap">
-                  {new Date(tx.date).toLocaleDateString()}
+                  {formatDate(tx.date)}
                 </td>
                 <td className="py-4 px-4 text-text font-medium flex items-center space-x-2">
                   <span>{tx.description}</span>

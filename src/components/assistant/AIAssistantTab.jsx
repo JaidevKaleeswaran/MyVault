@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   Sparkles, Send, Download, FileText,
   RefreshCw, Mic, Camera, X,
-  Brain, Zap, ChevronDown, ChevronUp, Bot, User, Volume2
+  Brain, Zap, ChevronDown, ChevronUp, Bot, User, Volume2, ShieldCheck
 } from 'lucide-react';
 import { answerQuery, clearConversationHistory } from '../../services/agents/assistantAgent';
 import { buildFinancialSnapshot, processTransaction } from '../../services/agents/managerAgent';
@@ -10,6 +10,7 @@ import { useBudget } from '../../contexts/BudgetContext';
 import { useAuth } from '../../contexts/AuthContext';
 import VoiceInputPanel from './VoiceInputPanel';
 import ReceiptScannerModal from '../transactions/ReceiptScannerModal';
+import VoiceAuditLogModal from './VoiceAuditLogModal';
 import { toast } from 'react-hot-toast';
 
 // ── Markdown rendering helpers ──────────────────────────────────────────────
@@ -125,10 +126,10 @@ function AgentPipelineBadge({ source, metrics }) {
 // ── Suggested Quick Actions ─────────────────────────────────────────────────
 
 const QUICK_QUESTIONS = [
-  { text: 'How much did I spend this month?', icon: '💰' },
-  { text: 'What are my top spending categories?', icon: '📊' },
-  { text: 'Am I over budget anywhere?', icon: '⚠️' },
-  { text: 'What is my net balance?', icon: '🏦' },
+  { text: 'How much did I spend this month?' },
+  { text: 'What are my top spending categories?' },
+  { text: 'Am I over budget anywhere?' },
+  { text: 'What is my net balance?' },
 ];
 
 // ── Main Component ──────────────────────────────────────────────────────────
@@ -142,6 +143,7 @@ export default function AIAssistantTab() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showVoicePanel, setShowVoicePanel] = useState(false);
   const [showReceiptScanner, setShowReceiptScanner] = useState(false);
+  const [showVoiceAuditLog, setShowVoiceAuditLog] = useState(false);
   const chatEndRef = useRef(null);
 
   // Build financial snapshot for the AI Assistant
@@ -157,7 +159,7 @@ export default function AIAssistantTab() {
           sender: 'assistant',
           source: 'assistant',
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          text: `Hello ${user?.displayName || 'there'}! I'm your AI Financial Assistant.\n\nI have direct access to all your MyVault data — **${budgetState.transactions?.length || 0} transactions**, **${budgetState.categories?.length || 0} budget categories**, and **${budgetState.incomeSources?.length || 0} income sources**.\n\n**Three ways to interact with me:**\n• 💬 **Type** a question about your finances\n• 🎤 **Speak** a receipt — say what you bought and how much\n• 📷 **Scan** a receipt photo with AI vision\n\nAll data is processed in real-time. Ask me anything!`,
+          text: `Hello ${user?.displayName || 'there'}! I'm your AI Financial Assistant.\n\nI have direct access to all your MyVault data — **${budgetState.transactions?.length || 0} transactions**, **${budgetState.categories?.length || 0} budget categories**, and **${budgetState.incomeSources?.length || 0} income sources**.\n\n**Three ways to interact:**\n• **Type** a question about your finances\n• **Speak** a receipt using ElevenLabs AI Voice\n• **Scan** a receipt photo with Vision AI\n\nAll data is processed in real-time. Ask me anything!`,
         }
       ];
     });
@@ -232,7 +234,7 @@ export default function AIAssistantTab() {
       {
         id: `voice_${Date.now()}`,
         sender: 'user',
-        text: `🎤 Voice receipt: "${parsedData.description}" — $${parsedData.amount.toFixed(2)} on ${parsedData.date}`,
+        text: `Voice receipt: "${parsedData.description}" — $${parsedData.amount.toFixed(2)} on ${parsedData.date}`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         isVoice: true,
       }
@@ -254,7 +256,7 @@ export default function AIAssistantTab() {
           sender: 'assistant',
           source: 'manager',
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          text: `✅ **Transaction added!**\n\n• **Item:** ${result.transaction.description}\n• **Amount:** $${result.transaction.amount.toFixed(2)}\n• **Category:** ${result.category}\n• **Date:** ${result.transaction.date}\n\nThe transaction has been added to your dashboard and will be reflected in your budget immediately.`,
+          text: `**Transaction added**\n\n• **Item:** ${result.transaction.description}\n• **Amount:** $${result.transaction.amount.toFixed(2)}\n• **Category:** ${result.category}\n• **Date:** ${result.transaction.date}\n\nThe transaction has been added to your dashboard and will be reflected in your budget immediately.`,
           metrics: { latencyMs: 0 },
         }
       ]);
@@ -339,6 +341,15 @@ export default function AIAssistantTab() {
           </button>
 
           <button
+            onClick={() => setShowVoiceAuditLog(true)}
+            className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium bg-violet-500/10 hover:bg-violet-500/20 text-violet-300 rounded-lg border border-violet-500/30 transition-colors"
+            title="Inspect verbatim user speech transcripts & voice logs"
+          >
+            <ShieldCheck size={14} />
+            <span>Voice Logs ({budgetState.voiceLogs?.length || 0})</span>
+          </button>
+
+          <button
             onClick={handleExportCSV}
             className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium bg-zinc-800 hover:bg-zinc-700 text-text rounded-lg border border-zinc-700 transition-colors"
           >
@@ -368,6 +379,12 @@ export default function AIAssistantTab() {
       <ReceiptScannerModal
         isOpen={showReceiptScanner}
         onClose={() => setShowReceiptScanner(false)}
+      />
+
+      {/* Voice Audit Log Inspector Modal */}
+      <VoiceAuditLogModal
+        isOpen={showVoiceAuditLog}
+        onClose={() => setShowVoiceAuditLog(false)}
       />
 
       {/* Main Chat Stream Container */}
@@ -436,9 +453,8 @@ export default function AIAssistantTab() {
                 <button
                   key={i}
                   onClick={() => handleSendQuery(q.text)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-zinc-800/50 hover:bg-zinc-700/50 text-zinc-300 hover:text-text rounded-lg border border-zinc-800 hover:border-zinc-700 transition-colors"
+                  className="px-3 py-1.5 text-xs bg-zinc-800/50 hover:bg-zinc-700/50 text-zinc-300 hover:text-text rounded-lg border border-zinc-800 hover:border-zinc-700 transition-colors"
                 >
-                  <span>{q.icon}</span>
                   <span>{q.text}</span>
                 </button>
               ))}

@@ -1,13 +1,12 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Mic, MicOff, Loader2, CheckCircle2, X, Volume2 } from 'lucide-react';
-import { parseSpokenReceipt, createWebSpeechRecognition } from '../../services/agents/voiceAgent';
+import { Mic, MicOff, Loader2, CheckCircle2, X, Volume2, Bot } from 'lucide-react';
+import { parseSpokenReceipt, createWebSpeechRecognition, speakTransactionDetails } from '../../services/agents/voiceAgent';
 
 /**
- * VoiceInputPanel — Premium voice interaction component
+ * VoiceInputPanel — MyVault Native Voice Receipt Agent
  * 
- * Uses the Web Speech API for real-time speech-to-text,
- * parses the transcript into structured transaction data,
- * and allows the user to confirm before adding to the dashboard.
+ * Uses our internal AI agent pipeline to recognize, parse, and process
+ * voice receipts into structured transactions without external SDK dependencies.
  */
 export default function VoiceInputPanel({ onTransactionReady, onClose }) {
   const [isListening, setIsListening] = useState(false);
@@ -16,10 +15,11 @@ export default function VoiceInputPanel({ onTransactionReady, onClose }) {
   const [parsedData, setParsedData] = useState(null);
   const [error, setError] = useState(null);
   const [pulsePhase, setPulsePhase] = useState(0);
+
   const recognitionRef = useRef(null);
   const animFrameRef = useRef(null);
 
-  // Animate pulse ring
+  // Pulse animation for mic ring
   useEffect(() => {
     if (!isListening) return;
     let frame = 0;
@@ -34,6 +34,7 @@ export default function VoiceInputPanel({ onTransactionReady, onClose }) {
     };
   }, [isListening]);
 
+  // Start native speech recognition
   const startListening = useCallback(() => {
     setError(null);
     setTranscript('');
@@ -41,42 +42,46 @@ export default function VoiceInputPanel({ onTransactionReady, onClose }) {
     setParsedData(null);
 
     const recognition = createWebSpeechRecognition(
-      // onResult
       (text, isFinal) => {
         if (isFinal) {
           setTranscript(text);
           setInterimTranscript('');
-          // Auto-parse the spoken receipt
           const parsed = parseSpokenReceipt(text);
-          setParsedData(parsed);
+          setParsedData({
+            ...parsed,
+            raw_transcript: text,
+          });
           setIsListening(false);
         } else {
           setInterimTranscript(text);
         }
       },
-      // onError
       (err) => {
-        console.error('Speech recognition error:', err);
+        console.error('Voice agent recognition error:', err);
         setError(err.message === 'not-allowed'
-          ? 'Microphone access denied. Please allow microphone permissions.'
-          : `Speech recognition error: ${err.message}`
+          ? 'Microphone permission denied. Please enable microphone access.'
+          : `Speech error: ${err.message || 'Could not process audio'}`
         );
         setIsListening(false);
       },
-      // onEnd
       () => {
         setIsListening(false);
       }
     );
 
     if (!recognition) {
-      setError('Speech recognition is not supported in this browser. Try Chrome or Edge.');
+      setError('Speech recognition is not supported in this browser. Please try Chrome or Edge.');
       return;
     }
 
     recognitionRef.current = recognition;
-    recognition.start();
-    setIsListening(true);
+    try {
+      recognition.start();
+      setIsListening(true);
+    } catch (e) {
+      console.error('Speech recognition start error:', e);
+      setIsListening(false);
+    }
   }, []);
 
   const stopListening = useCallback(() => {
@@ -88,7 +93,10 @@ export default function VoiceInputPanel({ onTransactionReady, onClose }) {
 
   const handleConfirm = () => {
     if (parsedData && onTransactionReady) {
-      onTransactionReady(parsedData);
+      onTransactionReady({
+        ...parsedData,
+        raw_transcript: parsedData.raw_transcript || transcript,
+      });
     }
   };
 
@@ -99,7 +107,7 @@ export default function VoiceInputPanel({ onTransactionReady, onClose }) {
     setError(null);
   };
 
-  // Waveform bar heights for animation
+  // Waveform animation height
   const barCount = 24;
   const getBarHeight = (index) => {
     if (!isListening) return 4;
@@ -110,7 +118,6 @@ export default function VoiceInputPanel({ onTransactionReady, onClose }) {
 
   return (
     <div className="bg-gradient-to-b from-[#0c0c14] to-[#18181b] border border-zinc-800 rounded-2xl p-6 space-y-5 relative overflow-hidden">
-      {/* Glassmorphism background effect */}
       <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 via-transparent to-accent/5 pointer-events-none" />
       
       {/* Close button */}
@@ -124,32 +131,21 @@ export default function VoiceInputPanel({ onTransactionReady, onClose }) {
       {/* Header */}
       <div className="text-center relative z-10">
         <h3 className="text-sm font-semibold text-text flex items-center justify-center gap-2">
-          <Volume2 size={16} className="text-violet-400" />
-          Voice Receipt Input
+          <Bot size={16} className="text-violet-400" />
+          MyVault Voice Receipt Agent
         </h3>
         <p className="text-xs text-zinc-500 mt-1">
-          Say what you bought, how much, and when
+          Say what you bought, how much, and when (e.g. "$15 on Taco Bell")
         </p>
       </div>
 
-      {/* Microphone Button with Pulse Ring */}
+      {/* Mic Button */}
       <div className="flex justify-center relative z-10">
         <div className="relative">
-          {/* Animated pulse rings */}
           {isListening && (
             <>
-              <div
-                className="absolute inset-0 rounded-full border-2 border-violet-400/30 animate-ping"
-                style={{ animationDuration: '1.5s' }}
-              />
-              <div
-                className="absolute -inset-3 rounded-full border border-violet-400/20 animate-ping"
-                style={{ animationDuration: '2s', animationDelay: '0.3s' }}
-              />
-              <div
-                className="absolute -inset-6 rounded-full border border-violet-400/10 animate-ping"
-                style={{ animationDuration: '2.5s', animationDelay: '0.6s' }}
-              />
+              <div className="absolute inset-0 rounded-full border-2 border-violet-400/30 animate-ping" style={{ animationDuration: '1.5s' }} />
+              <div className="absolute -inset-3 rounded-full border border-violet-400/20 animate-ping" style={{ animationDuration: '2s', animationDelay: '0.3s' }} />
             </>
           )}
 
@@ -161,7 +157,7 @@ export default function VoiceInputPanel({ onTransactionReady, onClose }) {
                 ? 'bg-gradient-to-br from-violet-500 to-purple-600 text-white shadow-violet-500/30 scale-110'
                 : parsedData
                   ? 'bg-emerald-500/20 text-emerald-400 border-2 border-emerald-500/30 cursor-default'
-                  : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white border-2 border-zinc-700 hover:border-violet-500/50 hover:shadow-violet-500/20'
+                  : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white border-2 border-zinc-700 hover:border-violet-500/50'
             }`}
           >
             {parsedData ? (
@@ -181,9 +177,7 @@ export default function VoiceInputPanel({ onTransactionReady, onClose }) {
           <div
             key={i}
             className={`w-[3px] rounded-full transition-all ${
-              isListening
-                ? 'bg-gradient-to-t from-violet-500 to-violet-300'
-                : 'bg-zinc-700'
+              isListening ? 'bg-gradient-to-t from-violet-500 to-violet-300' : 'bg-zinc-700'
             }`}
             style={{
               height: `${getBarHeight(i)}px`,
@@ -194,7 +188,7 @@ export default function VoiceInputPanel({ onTransactionReady, onClose }) {
         ))}
       </div>
 
-      {/* Status text */}
+      {/* Status */}
       <div className="text-center relative z-10">
         {isListening && (
           <p className="text-xs text-violet-400 flex items-center justify-center gap-1.5 animate-pulse">
@@ -204,7 +198,7 @@ export default function VoiceInputPanel({ onTransactionReady, onClose }) {
         )}
         {!isListening && !transcript && !error && !parsedData && (
           <p className="text-xs text-zinc-500">
-            Tap the microphone and say something like "<span className="text-zinc-400">$10 on Taco Bell</span>"
+            Tap mic to speak your receipt details
           </p>
         )}
       </div>
@@ -212,43 +206,42 @@ export default function VoiceInputPanel({ onTransactionReady, onClose }) {
       {/* Live Transcript */}
       {(interimTranscript || transcript) && (
         <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-3 relative z-10">
-          <p className="text-[10px] text-zinc-500 uppercase tracking-wider font-medium mb-1">Transcript</p>
+          <p className="text-[10px] text-zinc-500 uppercase font-medium mb-1">Transcript</p>
           <p className="text-sm text-zinc-200">
             {transcript || <span className="text-zinc-400 italic">{interimTranscript}</span>}
           </p>
         </div>
       )}
 
-      {/* Parsed Receipt Data */}
+      {/* Parsed Receipt Summary */}
       {parsedData && (
         <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-4 space-y-3 relative z-10 animate-in fade-in duration-300">
           <div className="flex items-center justify-between text-emerald-400">
             <div className="flex items-center gap-2">
               <CheckCircle2 size={16} />
-              <span className="text-xs font-semibold">Receipt Data Extracted</span>
+              <span className="text-xs font-semibold">Extracted Receipt Data</span>
             </div>
             <button
               type="button"
               onClick={() => speakTransactionDetails(parsedData)}
               className="flex items-center gap-1 text-[11px] bg-violet-500/20 text-violet-300 hover:bg-violet-500/30 border border-violet-500/30 px-2.5 py-1 rounded-md transition-colors"
-              title="Listen to receipt spoken with ElevenLabs"
             >
               <Volume2 size={12} />
-              <span>Speak Receipt</span>
+              <span>Speak</span>
             </button>
           </div>
 
           <div className="grid grid-cols-3 gap-3 text-center">
             <div className="bg-zinc-900/50 rounded-lg p-2.5">
-              <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Item</p>
+              <p className="text-[10px] text-zinc-500 uppercase">Item</p>
               <p className="text-sm font-semibold text-text mt-0.5">{parsedData.description}</p>
             </div>
             <div className="bg-zinc-900/50 rounded-lg p-2.5">
-              <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Amount</p>
-              <p className="text-sm font-semibold text-emerald-400 mt-0.5">${parsedData.amount.toFixed(2)}</p>
+              <p className="text-[10px] text-zinc-500 uppercase">Amount</p>
+              <p className="text-sm font-semibold text-emerald-400 mt-0.5">${Number(parsedData.amount).toFixed(2)}</p>
             </div>
             <div className="bg-zinc-900/50 rounded-lg p-2.5">
-              <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Date</p>
+              <p className="text-[10px] text-zinc-500 uppercase">Date</p>
               <p className="text-sm font-semibold text-text mt-0.5">{parsedData.date}</p>
             </div>
           </div>
@@ -264,20 +257,19 @@ export default function VoiceInputPanel({ onTransactionReady, onClose }) {
               onClick={handleConfirm}
               className="flex-1 px-3 py-2 text-xs font-semibold bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-400 hover:to-purple-500 text-white rounded-lg transition-all shadow-lg shadow-violet-500/20"
             >
-              Add to Dashboard
+              Add Transaction
             </button>
           </div>
         </div>
       )}
 
-
-      {/* Error Message */}
+      {/* Error display */}
       {error && (
         <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 relative z-10">
           <p className="text-xs text-red-400">{error}</p>
           <button
-            onClick={handleReset}
-            className="mt-2 text-xs text-red-300 hover:text-red-200 underline"
+            onClick={startListening}
+            className="mt-2 text-xs text-violet-300 hover:text-violet-200 underline block"
           >
             Try again
           </button>

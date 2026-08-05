@@ -166,12 +166,13 @@ Rules:
  * Process a transaction from Voice Agent or Receipt Scanner Agent
  * Categorizes it and dispatches to BudgetContext
  */
-export async function processTransaction({ description, amount, date, merchant, lineItems }, budgetState, dispatch) {
+export async function processTransaction({ description, amount, date, merchant, lineItems, raw_transcript, rawTranscript }, budgetState, dispatch) {
   const categories = budgetState?.categories || [];
   const categoryNames = categories.map(c => c.name);
   const merchantOrDesc = merchant || description || 'Unknown Purchase';
   const txAmount = Number(amount) || 0;
   const txDate = date || new Date().toISOString().split('T')[0];
+  const userRawTranscript = raw_transcript || rawTranscript || (description && description.includes('Voice receipt:') ? description : null);
 
   // Step 1: Try quick local match first
   let suggestedCategory = quickCategoryMatch(merchantOrDesc);
@@ -185,17 +186,39 @@ export async function processTransaction({ description, amount, date, merchant, 
   const categoryId = matchToUserCategory(suggestedCategory || 'General', categories);
 
   // Step 4: Build and dispatch the transaction
+  const txId = `tx_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
   const transaction = {
-    id: `tx_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+    id: txId,
     amount: txAmount,
     categoryId,
     description: merchantOrDesc,
     date: txDate,
     source: merchant ? 'ai_agent' : 'voice_agent',
+    raw_transcript: userRawTranscript,
     line_items: lineItems || null,
   };
 
   dispatch({ type: 'ADD_TRANSACTION', payload: transaction });
+
+  // Step 5: Dispatch Voice Log entry (Option 2 Audit Store)
+  if (userRawTranscript || !merchant) {
+    const voiceLog = {
+      id: `vlog_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      timestamp: new Date().toISOString(),
+      displayTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      rawTranscript: userRawTranscript || merchantOrDesc,
+      extracted: {
+        merchant: merchantOrDesc,
+        amount: txAmount,
+        date: txDate,
+        category: categories.find(c => c.id === categoryId)?.name || 'General',
+      },
+      transactionId: txId,
+      source: 'elevenlabs_conversational_voice',
+    };
+
+    dispatch({ type: 'ADD_VOICE_LOG', payload: voiceLog });
+  }
 
   // Return the processed transaction info
   const matchedCategory = categories.find(c => c.id === categoryId);

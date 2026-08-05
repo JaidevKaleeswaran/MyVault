@@ -50,9 +50,13 @@ export async function scanReceipt(imageFile) {
     amount: json.data?.total || 0,
     subtotal: json.data?.subtotal || null,
     tax: json.data?.tax || null,
+    tip: json.data?.tip || null,
+    paymentMethod: json.data?.payment_method || null,
     lineItems: json.data?.line_items || [],
     suggestedCategory: json.data?.suggested_category || 'Other',
     receiptImageUrl: json.receipt_image_url || null,
+    validation: json.validation || 'Pydantic Enforced',
+    engine: json.engine || 'pydantic_python',
     raw: json,
   };
 }

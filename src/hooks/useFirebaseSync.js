@@ -12,6 +12,7 @@ export function useFirebaseSync() {
     incomeSources,
     cycleStartDate,
     cycleFrequency,
+    voiceLogs,
     dispatch
   } = useBudget();
 
@@ -64,7 +65,8 @@ export function useFirebaseSync() {
           categories,
           incomeSources,
           cycleStartDate,
-          cycleFrequency
+          cycleFrequency,
+          voiceLogs: voiceLogs || [],
         };
         await setDoc(docRef, stateToSave, { merge: true });
         console.log("Budget data synced to Firestore.");
@@ -80,6 +82,7 @@ export function useFirebaseSync() {
     incomeSources,
     cycleStartDate,
     cycleFrequency,
+    voiceLogs,
     user,
     isHydrated
   ]);

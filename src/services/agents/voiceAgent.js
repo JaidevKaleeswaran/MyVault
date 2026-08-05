@@ -46,6 +46,7 @@ export function parseSpokenReceipt(text) {
   if (!text || typeof text !== 'string') return null;
 
   const result = {
+    raw_transcript: text,
     description: '',
     amount: 0,
     date: new Date().toISOString().split('T')[0],
@@ -179,19 +180,38 @@ export function createWebSpeechRecognition(onResult, onError, onEnd) {
   recognition.continuous = false;
   recognition.interimResults = true;
   recognition.lang = 'en-US';
+  recognition.maxAlternatives = 1;
+
+  let finalReceived = false;
+  let lastTranscript = '';
 
   recognition.onresult = (event) => {
     const last = event.results.length - 1;
     const transcript = event.results[last][0].transcript;
     const isFinal = event.results[last].isFinal;
+    lastTranscript = transcript;
+    if (isFinal) {
+      finalReceived = true;
+    }
     if (onResult) onResult(transcript, isFinal);
   };
 
   recognition.onerror = (event) => {
-    if (onError) onError(new Error(event.error));
+    // 'no-speech' is not really an error, user just didn't say anything
+    if (event.error === 'no-speech') {
+      if (onError) onError(new Error('No speech detected. Please try again and speak clearly.'));
+    } else if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+      if (onError) onError(new Error('not-allowed'));
+    } else {
+      if (onError) onError(new Error(event.error));
+    }
   };
 
   recognition.onend = () => {
+    // If we got interim results but no final, treat last interim as final
+    if (!finalReceived && lastTranscript) {
+      if (onResult) onResult(lastTranscript, true);
+    }
     if (onEnd) onEnd();
   };
 
@@ -343,14 +363,32 @@ function fallbackWebSpeech(text, onEnd, onError, resolve) {
 export function speakTransactionDetails(tx, categoryName = '', options = {}) {
   if (!tx) return;
 
-  const amount = Number(tx.amount || 0).toFixed(2);
-  const desc = tx.description || tx.merchant || 'Transaction';
-  const categoryStr = categoryName ? ` under category ${categoryName}` : '';
-  const dateStr = tx.date ? ` on ${new Date(tx.date).toLocaleDateString(undefined, { month: 'long', day: 'numeric' })}` : '';
+  try {
+    const rawAmount = Number(tx.amount || 0);
+    const amount = isNaN(rawAmount) ? '0.00' : rawAmount.toFixed(2);
+    const desc = tx.description || tx.merchant || 'Transaction';
+    const categoryStr = categoryName ? ` under category ${categoryName}` : '';
+    
+    let dateStr = '';
+    if (tx.date) {
+      try {
+        const parsedDate = new Date(tx.date);
+        if (!isNaN(parsedDate.getTime())) {
+          dateStr = ` on ${parsedDate.toLocaleDateString(undefined, { month: 'long', day: 'numeric' })}`;
+        } else {
+          dateStr = ` on ${tx.date}`;
+        }
+      } catch {
+        dateStr = ` on ${tx.date}`;
+      }
+    }
 
-  const phrase = `Transaction details: ${desc}, amount $${amount}${categoryStr}${dateStr}.`;
+    const phrase = `Transaction details: ${desc}, amount $${amount}${categoryStr}${dateStr}.`;
 
-  return speakTextWithElevenLabs(phrase, options);
+    return speakTextWithElevenLabs(phrase, options);
+  } catch (err) {
+    console.error('speakTransactionDetails error:', err);
+  }
 }
 
 /**
@@ -364,5 +402,24 @@ export function stopSpeech() {
   if ('speechSynthesis' in window) {
     window.speechSynthesis.cancel();
   }
+}
+
+/**
+ * Create a structured voice interaction log entry for Option 2 Voice Audit Store
+ */
+export function createVoiceLogEntry(rawTranscript, parsedData, transactionId = null) {
+  return {
+    id: `vlog_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    timestamp: new Date().toISOString(),
+    displayTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    rawTranscript: rawTranscript || parsedData?.raw_transcript || '',
+    extracted: {
+      merchant: parsedData?.description || parsedData?.merchant || 'Unknown',
+      amount: Number(parsedData?.amount || 0),
+      date: parsedData?.date || new Date().toISOString().split('T')[0],
+    },
+    transactionId: transactionId || null,
+    source: 'elevenlabs_conversational_voice',
+  };
 }
 

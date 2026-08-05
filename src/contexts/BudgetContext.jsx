@@ -1,8 +1,10 @@
-import React, { createContext, useReducer, useContext } from 'react';
+import React, { createContext, useReducer, useContext, useEffect } from 'react';
 import { normalizeToMasterCycle, getCycleWindow, isWithinCycle } from '../utils/cycleUtils';
 
-// Initial state with some default categories for demonstration
-const initialState = {
+const STORAGE_KEY = 'myvault_budget_state';
+
+// Default fallback state
+const defaultState = {
   incomeSources: [],
   cycleStartDate: null, // ISO date string — anchor for pay-cycle window
   cycleFrequency: 'monthly', // The master cycle the budget operates on
@@ -12,6 +14,25 @@ const initialState = {
     { id: '3', name: 'Entertainment', limit: 200, color: '#06b6d4', endOfCycleAction: 'none' },
   ],
   transactions: [],
+  voiceLogs: [],
+};
+
+// Initial state loaded from localStorage if available
+const getInitialState = () => {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return {
+        ...defaultState,
+        ...parsed,
+        categories: parsed.categories && parsed.categories.length > 0 ? parsed.categories : defaultState.categories,
+      };
+    }
+  } catch (e) {
+    console.warn('Failed to load budget state from localStorage:', e);
+  }
+  return defaultState;
 };
 
 const BudgetContext = createContext();
@@ -106,15 +127,37 @@ function budgetReducer(state, action) {
         ...state,
         transactions: state.transactions.filter((tx) => tx.id !== action.payload),
       };
+    case 'ADD_VOICE_LOG':
+      return {
+        ...state,
+        voiceLogs: [action.payload, ...(state.voiceLogs || [])],
+      };
+    case 'CLEAR_VOICE_LOGS':
+      return {
+        ...state,
+        voiceLogs: [],
+      };
     case 'SET_FULL_STATE':
-      return action.payload; // For hydrating from Firebase later
+      return {
+        ...action.payload,
+        voiceLogs: action.payload.voiceLogs || state.voiceLogs || [],
+      };
     default:
       return state;
   }
 }
 
 export function BudgetProvider({ children }) {
-  const [state, dispatch] = useReducer(budgetReducer, initialState);
+  const [state, dispatch] = useReducer(budgetReducer, null, getInitialState);
+
+  // Sync state to localStorage on changes
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (e) {
+      console.warn('Failed to save budget state to localStorage:', e);
+    }
+  }, [state]);
 
   // Calculate normalized total income
   const totalIncome = state.incomeSources.reduce((sum, source) => {
