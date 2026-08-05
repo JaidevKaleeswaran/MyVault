@@ -8,13 +8,19 @@
 
 import { GoogleGenAI } from '@google/genai';
 
-const ASSISTANT_API_KEY = import.meta.env.VITE_ASSISTANT_API_KEY;
-
 let aiInstance = null;
 
 function getAI() {
+  const apiKey = import.meta.env.VITE_ASSISTANT_API_KEY
+    || import.meta.env.VITE_GEMINI_API_KEY
+    || import.meta.env.GEMINI_API_KEY;
+
+  if (!apiKey) {
+    throw new Error('No Gemini API key configured. Set VITE_ASSISTANT_API_KEY or VITE_GEMINI_API_KEY in .env');
+  }
+
   if (!aiInstance) {
-    aiInstance = new GoogleGenAI({ apiKey: ASSISTANT_API_KEY });
+    aiInstance = new GoogleGenAI({ apiKey });
   }
   return aiInstance;
 }
@@ -42,12 +48,44 @@ function buildSystemPrompt(snapshot) {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
   });
 
-  return `You are the AI Financial Advisor for MyVault, a personal finance dashboard. Today is ${today}.
+  return `You are a financial assistant embedded in a personal budgeting app. Your job is to help users understand their finances AND give them real, actionable financial advice — not just report back numbers they can already see on screen.
 
-You have COMPLETE access to the user's REAL financial data. Answer questions accurately using ONLY the data provided below. Never fabricate numbers — if data is insufficient, say so honestly.
+Today is ${today}.
 
-═══ FINANCIAL SNAPSHOT ═══
+## How to use the data
 
+You will be given the user's budget data (income, expenses, categories, savings, goals, etc.) inside <user_budget_data> tags. Treat this as context about this specific person, not as the boundary of what you're allowed to talk about. You should:
+
+- Reference their actual numbers when relevant ("You're spending $420/mo on dining out, which is about 15% of your income")
+- Apply general financial knowledge, best practices, and reasoning that goes beyond what's in the data — budgeting frameworks, debt payoff strategies, savings rate benchmarks, emergency fund sizing, etc.
+- Answer general financial questions even if they aren't directly tied to the user's data (e.g. "what's a Roth IRA," "how does the 50/30/20 rule work")
+
+Do not limit yourself to summarizing or restating the data. The data is an input to your reasoning, not a cage around it.
+
+## How to respond
+
+1. Briefly acknowledge what the data shows, if relevant to the question.
+2. Give a clear, direct answer or recommendation — don't hedge into vagueness.
+3. Ground advice in real financial principles (e.g. "most guidance recommends 3–6 months of expenses in an emergency fund") rather than generic platitudes.
+4. Where there are multiple reasonable approaches, briefly mention the tradeoff instead of picking one silently.
+5. Keep responses concise and conversational — this is a chat interface, not a report.
+
+## Boundaries
+
+- You are not a licensed financial advisor. For anything involving specific investment decisions, tax filing, or legal/estate matters, give general educational information and suggest the user consult a licensed professional for their specific situation.
+- Don't fabricate numbers, account details, or transactions that aren't in the provided data — if you don't have the information needed, say so and ask, rather than guessing.
+
+## Example
+
+User data shows: income $4,200/mo, savings $50/mo, credit card balance $3,000 at 22% APR.
+
+User: "How am I doing?"
+
+Bad response: "You have $4,200 in income and are saving $50 a month with a $3,000 credit card balance."
+
+Good response: "Your savings rate is a bit thin at around 1% of income — most guidance targets 15-20%. But before ramping up savings, that credit card balance is worth prioritizing: at 22% APR, it's costing you roughly $55/month in interest, more than you're currently saving. It's usually worth paying that down aggressively before building savings beyond a small starter emergency fund (~$500–1,000), since guaranteed 22% "return" from paying off debt beats what savings will earn you."
+
+<user_budget_data>
 📊 SUMMARY:
 • Total Income: $${snapshot.summary.totalIncome}
 • Total Spent (current cycle): $${snapshot.summary.totalSpent}
@@ -88,18 +126,7 @@ ${Object.keys(snapshot.monthlySpending).length > 0
       `${month}: ${Object.entries(cats).map(([cat, amt]) => `${cat}: $${amt.toFixed(2)}`).join(', ')}`
     ).join('\n')
     : '• No monthly data available'}
-
-═══ END SNAPSHOT ═══
-
-RESPONSE GUIDELINES:
-1. Be concise but thorough. Use bullet points for lists.
-2. Always cite specific numbers from the data above.
-3. When discussing spending, reference the actual category amounts.
-4. Provide actionable insights and suggestions when relevant.
-5. If asked about something not in the data, clearly state that.
-6. Use currency formatting ($X.XX) for all monetary values.
-7. For trend questions, analyze the monthly spending data.
-8. Be friendly, professional, and helpful.`;
+</user_budget_data>`;
 }
 
 // ── Public API ─────────────────────────────────────────────────────────────────
@@ -124,12 +151,33 @@ export async function answerQuery(question, financialSnapshot) {
 
     const fullPrompt = systemPrompt + conversationContext + `\n\nUser question: ${question}`;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.0-flash',
-      contents: [{ role: 'user', parts: [{ text: fullPrompt }] }],
-    });
+    const modelsToTry = ['gemini-3.6-flash', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-flash-latest'];
+    let lastError = null;
+    let answerText = null;
+    let successfulModel = null;
 
-    const answerText = (response.text || '').trim();
+    for (const model of modelsToTry) {
+      try {
+        const response = await ai.models.generateContent({
+          model,
+          contents: [{ role: 'user', parts: [{ text: fullPrompt }] }],
+        });
+
+        answerText = (response.text || '').trim();
+        if (answerText) {
+          successfulModel = model;
+          break;
+        }
+      } catch (err) {
+        console.warn(`[AI Assistant] Model ${model} failed (${err.status || err.name || 'Error'}):`, err.message);
+        lastError = err;
+      }
+    }
+
+    if (!answerText) {
+      throw lastError || new Error('All Gemini model fallbacks failed to respond');
+    }
+
     const latencyMs = Date.now() - startTime;
 
     // Record in conversation history
@@ -141,12 +189,13 @@ export async function answerQuery(question, financialSnapshot) {
       answer: answerText,
       metrics: {
         latencyMs,
+        model: successfulModel,
         dataPointsUsed: financialSnapshot.summary.transactionCount,
         categoriesAnalyzed: financialSnapshot.categoryBreakdown.length,
       },
     };
   } catch (err) {
-    console.error('AI Assistant query failed:', err);
+    console.error('AI Assistant query failed with stack trace:\n', err.stack || err);
 
     // Fallback: try to answer simple questions from the snapshot directly
     const fallbackAnswer = tryFallbackAnswer(question, financialSnapshot);
@@ -162,6 +211,7 @@ export async function answerQuery(question, financialSnapshot) {
       success: false,
       answer: 'I apologize, but I encountered an error processing your question. Please try again.',
       error: err.message,
+      stack: err.stack,
       metrics: { latencyMs: Date.now() - startTime },
     };
   }

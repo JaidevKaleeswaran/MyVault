@@ -10,13 +10,20 @@
 
 import { GoogleGenAI } from '@google/genai';
 
-const MANAGER_API_KEY = import.meta.env.VITE_MANAGER_API_KEY;
-
 let aiInstance = null;
 
 function getAI() {
+  const apiKey = import.meta.env.VITE_MANAGER_API_KEY
+    || import.meta.env.VITE_ASSISTANT_API_KEY
+    || import.meta.env.VITE_GEMINI_API_KEY
+    || import.meta.env.GEMINI_API_KEY;
+
+  if (!apiKey) {
+    throw new Error('No Gemini API key configured. Set VITE_MANAGER_API_KEY, VITE_ASSISTANT_API_KEY, or VITE_GEMINI_API_KEY in .env');
+  }
+
   if (!aiInstance) {
-    aiInstance = new GoogleGenAI({ apiKey: MANAGER_API_KEY });
+    aiInstance = new GoogleGenAI({ apiKey });
   }
   return aiInstance;
 }
