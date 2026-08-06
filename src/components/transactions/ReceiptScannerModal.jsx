@@ -3,6 +3,7 @@ import { Modal } from '../ui/Modal';
 import { useBudget } from '../../contexts/BudgetContext';
 import { processTransaction } from '../../services/agents/managerAgent';
 import { speakTransactionDetails } from '../../services/agents/voiceAgent';
+import { scanReceipt } from '../../services/agents/receiptScannerAgent';
 import toast from 'react-hot-toast';
 import { Upload, Sparkles, Loader2, CheckCircle2, FileText, AlertCircle, Bot, Volume2 } from 'lucide-react';
 
@@ -75,20 +76,12 @@ export default function ReceiptScannerModal({ isOpen, onClose }) {
     setIsScanning(true);
     setScanError(null);
 
-    const bodyData = new FormData();
-    bodyData.append('receipt', selectedFile);
-
     try {
-      const response = await fetch('http://localhost:5000/api/receipts/scan', {
-        method: 'POST',
-        body: bodyData,
-      });
+      // Call Gemini Vision directly in the browser — works on Vercel & localhost
+      const result = await scanReceipt(selectedFile);
 
-      const json = await response.json();
-
-      if (!response.ok) {
-        throw new Error(json.message || json.error || 'Failed to scan receipt');
-      }
+      // result.data is the structured shape the modal expects
+      const json = result;
 
       setScanResult(json);
       toast.success('Receipt scanned successfully!');

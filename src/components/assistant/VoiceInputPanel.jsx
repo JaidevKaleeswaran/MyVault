@@ -1,8 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Mic, MicOff, Loader2, CheckCircle2, X, Volume2, Send, Sparkles } from 'lucide-react';
 import { parseSpokenReceipt, createWebSpeechRecognition, speakTransactionDetails } from '../../services/agents/voiceAgent';
-
-const API_BASE = 'http://localhost:5000';
+import { GoogleGenAI } from '@google/genai';
 
 /**
  * VoiceInputPanel — MyVault Dual Voice & Text Receipt Input Agent
@@ -74,43 +73,122 @@ export default function VoiceInputPanel({ onTransactionReady, onClose }) {
     }, 200);
   }, []);
 
-  // Send recorded audio blob to Express backend Gemini transcription endpoint
+  // Transcribe recorded audio blob via Gemini directly in the browser
+  // Works on both localhost and Vercel — no Express backend required
   const sendAudioToBackend = async (audioBlob) => {
     setIsProcessing(true);
     setError(null);
 
-    try {
-      const formData = new FormData();
-      formData.append('audio', audioBlob, 'spoken-receipt.webm');
-
-      const response = await fetch(`${API_BASE}/api/voice/transcribe`, {
-        method: 'POST',
-        body: formData,
-      });
-
-      const json = await response.json();
-
-      if (response.ok && json.success) {
-        const fullTranscript = json.transcript || inputText || 'Spoken Receipt';
-        setInputText(fullTranscript);
-        setParsedData({
-          description: json.merchant || 'Spoken Purchase',
-          amount: json.amount || 0,
-          date: json.date || new Date().toISOString().split('T')[0],
-          raw_transcript: fullTranscript,
-        });
+    if (!audioBlob || audioBlob.size < 500) {
+      console.warn('[Voice] Audio recording was empty or too short:', audioBlob?.size);
+      if (inputText) {
+        processText(inputText);
+      } else {
+        setError('Audio recording was too short or quiet. Please hold the mic button while speaking.');
         setIsProcessing(false);
-        return true;
       }
-    } catch (err) {
-      console.warn('Backend audio transcription failed, falling back to local NLP:', err);
+      return;
     }
 
-    // Fallback to text parsing if backend audio fails
+    let lastErrorMsg = '';
+
+    try {
+      // Collect available keys, prioritizing verified working keys
+      const apiKeys = [
+        import.meta.env.VITE_RECEIPT_SCANNER_API_KEY,
+        import.meta.env.VITE_MANAGER_API_KEY,
+        import.meta.env.VITE_ASSISTANT_API_KEY,
+      ].filter(Boolean);
+
+      if (apiKeys.length === 0) {
+        throw new Error('No Gemini API key configured for audio transcription');
+      }
+
+      // Convert audio blob to base64 using FileReader
+      const base64Audio = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const base64 = reader.result.split(',')[1];
+          resolve(base64);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(audioBlob);
+      });
+
+      // Strip codec info from MIME type — Gemini needs 'audio/webm', not 'audio/webm;codecs=opus'
+      const mimeType = (audioBlob.type || 'audio/webm').split(';')[0];
+
+      const prompt = `Listen carefully to this spoken receipt audio recording.
+Extract what the user bought, the total amount spent, and the date of purchase.
+Return ONLY valid JSON (no markdown formatting) in this exact structure:
+{
+  "transcript": "Exact spoken text",
+  "merchant": "Merchant or Store Name or Description",
+  "amount": 0.00,
+  "date": "YYYY-MM-DD"
+}
+
+If the year/date is not mentioned, use today's date (${new Date().toISOString().split('T')[0]}).`;
+
+      const modelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash'];
+
+      // Try keys and models
+      for (const apiKey of apiKeys) {
+        const ai = new GoogleGenAI({ apiKey });
+        for (const model of modelsToTry) {
+          try {
+            const response = await ai.models.generateContent({
+              model,
+              contents: [
+                {
+                  role: 'user',
+                  parts: [
+                    { text: prompt },
+                    {
+                      inlineData: {
+                        mimeType,
+                        data: base64Audio,
+                      },
+                    },
+                  ],
+                },
+              ],
+            });
+
+            const rawText = (response.text || '').trim();
+            if (!rawText) continue;
+
+            const cleaned = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');
+            const data = JSON.parse(cleaned);
+
+            const fullTranscript = data.transcript || inputText || 'Spoken Receipt';
+            setInputText(fullTranscript);
+            setParsedData({
+              description: data.merchant || 'Spoken Purchase',
+              amount: Number(data.amount) || 0,
+              date: data.date || new Date().toISOString().split('T')[0],
+              raw_transcript: fullTranscript,
+            });
+            setIsProcessing(false);
+            return true;
+          } catch (modelErr) {
+            console.warn(`[Voice] Key ${apiKey.substring(0, 10)}... Model ${model} failed:`, modelErr.message);
+            lastErrorMsg = modelErr.message || String(modelErr);
+          }
+        }
+      }
+
+      throw new Error(lastErrorMsg || 'All Gemini models failed to transcribe audio');
+    } catch (err) {
+      console.warn('[Voice] Gemini audio transcription failed:', err.message);
+      lastErrorMsg = err.message;
+    }
+
+    // Fallback: if WebSpeech captured any text, try parsing that
     if (inputText) {
       processText(inputText);
     } else {
-      setError('Could not transcribe audio. Please type your purchase details below.');
+      setError(lastErrorMsg ? `Transcription error: ${lastErrorMsg}` : 'Could not transcribe audio. Please type your purchase details below.');
       setIsProcessing(false);
     }
   };
@@ -129,7 +207,7 @@ export default function VoiceInputPanel({ onTransactionReady, onClose }) {
       mediaRecorderRef.current = mediaRecorder;
 
       mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
+        if (event.data && event.data.size > 0) {
           audioChunksRef.current.push(event.data);
         }
       };
@@ -137,11 +215,13 @@ export default function VoiceInputPanel({ onTransactionReady, onClose }) {
       mediaRecorder.onstop = () => {
         // Stop all tracks
         stream.getTracks().forEach((track) => track.stop());
-        const audioBlob = new Blob(audioChunksRef.current, { type: mediaRecorder.mimeType || 'audio/webm' });
+        const mimeType = mediaRecorder.mimeType || 'audio/webm';
+        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
         sendAudioToBackend(audioBlob);
       };
 
-      mediaRecorder.start();
+      // Start recording with 100ms timeslice to gather chunks continuously
+      mediaRecorder.start(100);
       setIsListening(true);
     } catch (micErr) {
       console.warn('MediaRecorder mic access error:', micErr);

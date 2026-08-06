@@ -15,6 +15,7 @@ const defaultState = {
   ],
   transactions: [],
   voiceLogs: [],
+  chatMessages: [],
 };
 
 // Initial state loaded from localStorage if available
@@ -137,10 +138,21 @@ function budgetReducer(state, action) {
         ...state,
         voiceLogs: [],
       };
+    case 'ADD_CHAT_MESSAGE':
+      return {
+        ...state,
+        chatMessages: [...(state.chatMessages || []), action.payload],
+      };
+    case 'CLEAR_CHAT_MESSAGES':
+      return {
+        ...state,
+        chatMessages: [],
+      };
     case 'SET_FULL_STATE':
       return {
         ...action.payload,
         voiceLogs: action.payload.voiceLogs || state.voiceLogs || [],
+        chatMessages: action.payload.chatMessages || state.chatMessages || [],
       };
     default:
       return state;
