@@ -254,12 +254,14 @@ export async function speakTextWithElevenLabs(text, options = {}) {
     let response;
 
     try {
-      response = await fetch('http://localhost:5000/api/voice/speak', {
+      const apiBase = import.meta.env.VITE_API_BASE_URL || (typeof window !== 'undefined' && window.location.hostname === 'localhost' ? 'http://localhost:5000' : '');
+      response = await fetch(`${apiBase}/api/voice/speak`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text, voiceId }),
       });
     } catch {
+
       // Backend unavailable, try direct ElevenLabs API if client key exists
       response = null;
     }

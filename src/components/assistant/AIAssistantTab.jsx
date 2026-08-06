@@ -138,7 +138,9 @@ export default function AIAssistantTab() {
   const budgetState = useBudget();
   const { user } = useAuth();
 
-  const [messages, setMessages] = useState([]);
+  const { dispatch } = budgetState;
+  const messages = budgetState.chatMessages || [];
+
   const [inputQuery, setInputQuery] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [showVoicePanel, setShowVoicePanel] = useState(false);
@@ -149,25 +151,25 @@ export default function AIAssistantTab() {
   // Build financial snapshot for the AI Assistant
   const financialSnapshot = buildFinancialSnapshot(budgetState);
 
-  // Welcome message
+  // Welcome message if chat history is empty
   useEffect(() => {
-    setMessages(prev => {
-      if (prev.length > 0) return prev;
-      return [
-        {
+    if (messages.length === 0) {
+      dispatch({
+        type: 'ADD_CHAT_MESSAGE',
+        payload: {
           id: 'msg_welcome',
           sender: 'assistant',
           source: 'assistant',
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           text: `Hello ${user?.displayName || 'there'}! I'm your AI Financial Assistant.\n\nI have direct access to all your MyVault data — **${budgetState.transactions?.length || 0} transactions**, **${budgetState.categories?.length || 0} budget categories**, and **${budgetState.incomeSources?.length || 0} income sources**.\n\n**Three ways to interact:**\n• **Type** a question about your finances\n• **Speak** a receipt using ElevenLabs AI Voice\n• **Scan** a receipt photo with Vision AI\n\nAll data is processed in real-time. Ask me anything!`,
         }
-      ];
-    });
-  }, [budgetState.transactions?.length, budgetState.categories?.length, budgetState.incomeSources?.length, user]);
+      });
+    }
+  }, [messages.length, budgetState.transactions?.length, budgetState.categories?.length, budgetState.incomeSources?.length, user, dispatch]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isProcessing]);
+  }, [messages.length, isProcessing]);
 
   // ── Handle text question ────────────────────────────────────────────────
 
@@ -177,47 +179,44 @@ export default function AIAssistantTab() {
 
     setInputQuery('');
     const userMsgId = `user_${Date.now()}`;
+    const userMsg = {
+      id: userMsgId,
+      sender: 'user',
+      text: query,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
 
     // Append user message
-    setMessages(prev => [
-      ...prev,
-      {
-        id: userMsgId,
-        sender: 'user',
-        text: query,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      }
-    ]);
+    dispatch({ type: 'ADD_CHAT_MESSAGE', payload: userMsg });
 
     setIsProcessing(true);
 
     try {
       const result = await answerQuery(query, financialSnapshot);
 
-      setMessages(prev => [
-        ...prev,
-        {
-          id: `ai_${Date.now()}`,
-          sender: 'assistant',
-          source: 'assistant',
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          text: result.answer,
-          metrics: result.metrics,
-        }
-      ]);
+      const aiMsg = {
+        id: `ai_${Date.now()}`,
+        sender: 'assistant',
+        source: 'assistant',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        text: result.answer,
+        metrics: result.metrics,
+      };
+
+      dispatch({ type: 'ADD_CHAT_MESSAGE', payload: aiMsg });
     } catch (error) {
       console.error('Assistant query error:', error);
       toast.error('Failed to process your question.');
-      setMessages(prev => [
-        ...prev,
-        {
+      dispatch({
+        type: 'ADD_CHAT_MESSAGE',
+        payload: {
           id: `error_${Date.now()}`,
           sender: 'assistant',
           source: 'assistant',
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           text: 'I apologize, but I encountered an error. Please try again.',
         }
-      ]);
+      });
     } finally {
       setIsProcessing(false);
     }
@@ -228,17 +227,16 @@ export default function AIAssistantTab() {
   const handleVoiceTransaction = async (parsedData) => {
     setShowVoicePanel(false);
 
+    const voiceMsg = {
+      id: `voice_${Date.now()}`,
+      sender: 'user',
+      text: `Voice receipt: "${parsedData.description}" — $${parsedData.amount.toFixed(2)} on ${parsedData.date}`,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      isVoice: true,
+    };
+
     // Show what was captured
-    setMessages(prev => [
-      ...prev,
-      {
-        id: `voice_${Date.now()}`,
-        sender: 'user',
-        text: `Voice receipt: "${parsedData.description}" — $${parsedData.amount.toFixed(2)} on ${parsedData.date}`,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        isVoice: true,
-      }
-    ]);
+    dispatch({ type: 'ADD_CHAT_MESSAGE', payload: voiceMsg });
 
     setIsProcessing(true);
 
@@ -249,17 +247,16 @@ export default function AIAssistantTab() {
         budgetState.dispatch
       );
 
-      setMessages(prev => [
-        ...prev,
-        {
-          id: `manager_${Date.now()}`,
-          sender: 'assistant',
-          source: 'manager',
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          text: `**Transaction added**\n\n• **Item:** ${result.transaction.description}\n• **Amount:** $${result.transaction.amount.toFixed(2)}\n• **Category:** ${result.category}\n• **Date:** ${result.transaction.date}\n\nThe transaction has been added to your dashboard and will be reflected in your budget immediately.`,
-          metrics: { latencyMs: 0 },
-        }
-      ]);
+      const managerMsg = {
+        id: `manager_${Date.now()}`,
+        sender: 'assistant',
+        source: 'manager',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        text: `**Transaction added**\n\n• **Item:** ${result.transaction.description}\n• **Amount:** $${result.transaction.amount.toFixed(2)}\n• **Category:** ${result.category}\n• **Date:** ${result.transaction.date}\n\nThe transaction has been added to your dashboard and will be reflected in your budget immediately.`,
+        metrics: { latencyMs: 0 },
+      };
+
+      dispatch({ type: 'ADD_CHAT_MESSAGE', payload: managerMsg });
 
       toast.success(result.message);
     } catch (error) {
@@ -269,6 +266,7 @@ export default function AIAssistantTab() {
       setIsProcessing(false);
     }
   };
+
 
   // ── Handle CSV export ───────────────────────────────────────────────────
 
@@ -322,11 +320,10 @@ export default function AIAssistantTab() {
         <div className="flex items-center space-x-2">
           <button
             onClick={() => { setShowVoicePanel(!showVoicePanel); setShowReceiptScanner(false); }}
-            className={`flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
-              showVoicePanel
+            className={`flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${showVoicePanel
                 ? 'bg-violet-500/20 text-violet-300 border-violet-500/30'
                 : 'bg-zinc-800 hover:bg-zinc-700 text-text border-zinc-700'
-            }`}
+              }`}
           >
             <Mic size={14} />
             <span>Voice Receipt</span>
@@ -395,15 +392,13 @@ export default function AIAssistantTab() {
               {msg.sender === 'user' ? (
                 /* User Message Bubble */
                 <div className="flex justify-end">
-                  <div className={`max-w-lg rounded-2xl rounded-tr-xs px-4 py-3 text-sm ${
-                    msg.isVoice
+                  <div className={`max-w-lg rounded-2xl rounded-tr-xs px-4 py-3 text-sm ${msg.isVoice
                       ? 'bg-violet-500/10 border border-violet-500/20 text-text'
                       : 'bg-accent/10 border border-accent/20 text-text'
-                  }`}>
+                    }`}>
                     <p className="font-medium">{msg.text}</p>
-                    <span className={`text-[10px] block text-right mt-1 ${
-                      msg.isVoice ? 'text-violet-400/60' : 'text-accent/60'
-                    }`}>{msg.timestamp}</span>
+                    <span className={`text-[10px] block text-right mt-1 ${msg.isVoice ? 'text-violet-400/60' : 'text-accent/60'
+                      }`}>{msg.timestamp}</span>
                   </div>
                 </div>
               ) : (
@@ -466,11 +461,10 @@ export default function AIAssistantTab() {
         <div className="mt-4 pt-3 border-t border-zinc-800 flex items-center space-x-2">
           <button
             onClick={() => setShowVoicePanel(!showVoicePanel)}
-            className={`p-3 rounded-xl transition-colors border ${
-              showVoicePanel
+            className={`p-3 rounded-xl transition-colors border ${showVoicePanel
                 ? 'bg-violet-500/20 text-violet-400 border-violet-500/30'
                 : 'bg-zinc-800 text-zinc-400 hover:text-violet-400 hover:bg-violet-500/10 border-zinc-700 hover:border-violet-500/30'
-            }`}
+              }`}
             title="Voice Receipt"
           >
             <Mic size={18} />
