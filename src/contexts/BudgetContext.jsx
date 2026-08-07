@@ -18,22 +18,62 @@ const defaultState = {
   chatMessages: [],
 };
 
+// Helper to eliminate duplicate categories by name & preserve transaction links
+function sanitizeState(state) {
+  if (!state || !Array.isArray(state.categories)) return state;
+
+  const seenCategories = new Map();
+  const idMap = new Map();
+  const cleanedCategories = [];
+
+  for (const cat of state.categories) {
+    if (!cat || !cat.name) continue;
+    const normName = cat.name.trim().toLowerCase();
+
+    if (seenCategories.has(normName)) {
+      const canonical = seenCategories.get(normName);
+      idMap.set(cat.id, canonical.id);
+      canonical.limit = Math.max(Number(canonical.limit) || 0, Number(cat.limit) || 0);
+    } else {
+      const cleanCat = { ...cat, name: cat.name.trim() };
+      seenCategories.set(normName, cleanCat);
+      cleanedCategories.push(cleanCat);
+    }
+  }
+
+  let cleanedTransactions = state.transactions || [];
+  if (idMap.size > 0 && Array.isArray(state.transactions)) {
+    cleanedTransactions = state.transactions.map((tx) => {
+      if (idMap.has(tx.categoryId)) {
+        return { ...tx, categoryId: idMap.get(tx.categoryId) };
+      }
+      return tx;
+    });
+  }
+
+  return {
+    ...state,
+    categories: cleanedCategories,
+    transactions: cleanedTransactions,
+  };
+}
+
 // Initial state loaded from localStorage if available
 const getInitialState = () => {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
-      return {
+      return sanitizeState({
         ...defaultState,
         ...parsed,
         categories: parsed.categories && parsed.categories.length > 0 ? parsed.categories : defaultState.categories,
-      };
+      });
     }
   } catch (e) {
     console.warn('Failed to load budget state from localStorage:', e);
   }
-  return defaultState;
+  return sanitizeState(defaultState);
 };
 
 const BudgetContext = createContext();
@@ -89,24 +129,24 @@ function budgetReducer(state, action) {
         cycleFrequency: action.payload.cycleFrequency !== undefined ? action.payload.cycleFrequency : state.cycleFrequency,
       };
     case 'ADD_CATEGORY':
-      return { ...state, categories: [...state.categories, action.payload] };
+      return sanitizeState({ ...state, categories: [...state.categories, action.payload] });
     case 'UPDATE_CATEGORY':
-      return {
+      return sanitizeState({
         ...state,
         categories: state.categories.map((cat) =>
           cat.id === action.payload.id ? { ...cat, ...action.payload } : cat
         ),
-      };
+      });
     case 'DELETE_CATEGORY':
       return {
         ...state,
         categories: state.categories.filter((cat) => cat.id !== action.payload),
       };
     case 'REPLACE_CATEGORIES': // Used by Quick-Fill (if replacing) or merging (if handled outside)
-      return {
+      return sanitizeState({
         ...state,
         categories: action.payload,
-      };
+      });
     case 'ADD_TRANSACTION': {
       const newTx = {
         receipt_image_url: null,
@@ -149,11 +189,12 @@ function budgetReducer(state, action) {
         chatMessages: [],
       };
     case 'SET_FULL_STATE':
-      return {
+      return sanitizeState({
         ...action.payload,
         voiceLogs: action.payload.voiceLogs || state.voiceLogs || [],
         chatMessages: action.payload.chatMessages || state.chatMessages || [],
-      };
+      });
+
     default:
       return state;
   }

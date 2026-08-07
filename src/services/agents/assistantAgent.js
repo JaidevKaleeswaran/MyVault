@@ -247,3 +247,77 @@ function tryFallbackAnswer(question, snapshot) {
 export function getConversationHistory() {
   return [...conversationHistory];
 }
+
+/**
+ * Analyze a specific transaction for suspicious patterns using Gemini.
+ * Called when the user clicks "AI Review" on a flagged transaction.
+ */
+export async function reviewSuspiciousTransaction(tx, budgetSnapshot) {
+  const startTime = Date.now();
+
+  const { transactions = [], categories = [] } = budgetSnapshot;
+
+  // Build context about the category and similar transactions
+  const cat = categories.find(c => c.id === tx.categoryId);
+  const catName = cat?.name || 'Unknown';
+  const catLimit = cat?.limit || 0;
+
+  const similarTxs = transactions
+    .filter(t => t.id !== tx.id && t.categoryId === tx.categoryId)
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .slice(0, 10)
+    .map(t => `• ${t.date} | ${t.description} | $${t.amount}`);
+
+  const prompt = `You are a financial anomaly detection assistant. Analyze this transaction and determine if it is genuinely suspicious or if it appears to be a normal expense.
+
+Transaction under review:
+- Description: "${tx.description}"
+- Amount: $${tx.amount}
+- Date: ${tx.date}
+- Category: ${catName} (limit: $${catLimit})
+- Source: ${tx.source || 'manual'}
+
+Recent similar transactions in the same category:
+${similarTxs.length > 0 ? similarTxs.join('\n') : '• No prior transactions in this category'}
+
+Possible reasons it was flagged: duplicate within 24h, amount unusually high vs category average, or outlier vs category limit.
+
+Respond in 2 sentences max. Start with either "✅ Looks normal:" or "⚠️ Suspicious:" and then explain your reasoning clearly and concisely.`;
+
+  try {
+    const ai = getAI();
+    const modelsToTry = ['gemini-3.6-flash', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-flash-latest'];
+    let answerText = null;
+    let lastError = null;
+
+    for (const model of modelsToTry) {
+      try {
+        const response = await ai.models.generateContent({
+          model,
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        });
+        answerText = (response.text || '').trim();
+        if (answerText) break;
+      } catch (err) {
+        console.warn(`[SuspiciousReview] Model ${model} failed:`, err.message);
+        lastError = err;
+      }
+    }
+
+    if (!answerText) throw lastError || new Error('All Gemini model fallbacks failed to respond');
+
+    const isSuspicious = answerText.toLowerCase().includes('suspicious');
+    return {
+      verdict: answerText,
+      isSuspicious,
+      latencyMs: Date.now() - startTime,
+    };
+  } catch (err) {
+    console.error('[SuspiciousReview] Error:', err);
+    return {
+      verdict: `Could not complete AI review: ${err.message}`,
+      isSuspicious: false,
+      latencyMs: Date.now() - startTime,
+    };
+  }
+}

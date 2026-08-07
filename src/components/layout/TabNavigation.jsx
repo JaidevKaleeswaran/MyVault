@@ -6,7 +6,7 @@ export default function TabNavigation({ activeTab, setActiveTab }) {
     { id: 'home', label: 'Home' },
     { id: 'assistant', label: 'AI Assistant', isAi: true },
     { id: 'summary', label: 'Summary' },
-    { id: 'transactions', label: 'Transactions' },
+    { id: 'transactions', label: 'Expenses' },
   ];
 
   return (

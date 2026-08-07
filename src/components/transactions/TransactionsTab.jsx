@@ -7,8 +7,9 @@ import ReceiptScannerModal from './ReceiptScannerModal';
 import VoiceInputPanel from '../assistant/VoiceInputPanel';
 import { speakTransactionDetails, stopSpeech } from '../../services/agents/voiceAgent';
 import { processTransaction } from '../../services/agents/managerAgent';
-import toast from 'react-hot-toast';
-import { Plus, Edit2, Sparkles, Receipt, Volume2, VolumeX, Mic, Loader2 } from 'lucide-react';
+import { reviewSuspiciousTransaction } from '../../services/agents/assistantAgent';
+import toast from 'react-hot-toast'
+import { Plus, Edit2, Sparkles, Receipt, Volume2, VolumeX, Mic, Loader2, RefreshCw, AlertTriangle } from 'lucide-react';
 
 export default function TransactionsTab() {
   const budgetState = useBudget();
@@ -18,6 +19,7 @@ export default function TransactionsTab() {
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [showVoicePanel, setShowVoicePanel] = useState(false);
   const [speakingTxId, setSpeakingTxId] = useState(null);
+  const [reviewingTxId, setReviewingTxId] = useState(null);
 
   const getCategoryName = (id) => {
     const cat = categories.find(c => c.id === id);
@@ -63,10 +65,33 @@ export default function TransactionsTab() {
     setShowVoicePanel(false);
     try {
       const result = await processTransaction(parsedData, budgetState, dispatch);
-      toast.success(result.message || 'Voice receipt transaction added!');
+      toast.success(result.message || 'Voice receipt expense added!');
     } catch (err) {
       console.error('Voice transaction processing error:', err);
-      toast.error('Failed to add voice transaction');
+      toast.error('Failed to add voice expense');
+    }
+  };
+
+  const handleAIReview = async (tx) => {
+    setReviewingTxId(tx.id);
+    try {
+      const snapshot = { transactions, categories };
+      const result = await reviewSuspiciousTransaction(tx, snapshot);
+      toast(result.verdict, {
+        duration: 6000,
+        icon: result.isSuspicious ? '⚠️' : '✅',
+        style: {
+          background: result.isSuspicious ? 'rgba(234,88,12,0.15)' : 'rgba(16,185,129,0.1)',
+          borderColor: result.isSuspicious ? 'rgba(234,88,12,0.3)' : 'rgba(16,185,129,0.3)',
+          border: '1px solid',
+          color: '#f3f4f6',
+          maxWidth: '380px',
+        },
+      });
+    } catch (err) {
+      toast.error('AI review failed');
+    } finally {
+      setReviewingTxId(null);
     }
   };
 
@@ -83,10 +108,40 @@ export default function TransactionsTab() {
     }
   };
 
+  // Detect suspicious transactions via heuristics
+  const suspiciousIds = new Set();
+  const txMap = {};
+  transactions.forEach(tx => {
+    const key = `${tx.description?.toLowerCase()}_${tx.amount}`;
+    if (!txMap[key]) txMap[key] = [];
+    txMap[key].push(tx);
+  });
+  Object.values(txMap).forEach(group => {
+    if (group.length > 1) {
+      // Check if duplicates are within 24 hours
+      group.sort((a, b) => new Date(a.date) - new Date(b.date));
+      for (let i = 1; i < group.length; i++) {
+        const diff = Math.abs(new Date(group[i].date) - new Date(group[i - 1].date));
+        if (diff < 24 * 60 * 60 * 1000) {
+          suspiciousIds.add(group[i].id);
+        }
+      }
+    }
+  });
+  // Also flag amounts > 3x category avg
+  categories.forEach(cat => {
+    const catTxs = transactions.filter(tx => tx.categoryId === cat.id);
+    if (catTxs.length < 2) return;
+    const avg = catTxs.reduce((s, t) => s + Number(t.amount), 0) / catTxs.length;
+    catTxs.forEach(tx => {
+      if (Number(tx.amount) > avg * 3) suspiciousIds.add(tx.id);
+    });
+  });
+
   return (
     <Card className="min-h-[500px] space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-xl font-semibold text-text">Transactions</h2>
+        <h2 className="text-xl font-semibold text-neon">Expenses</h2>
         <div className="flex items-center space-x-2">
           <button
             onClick={() => setShowVoicePanel(!showVoicePanel)}
@@ -107,7 +162,7 @@ export default function TransactionsTab() {
             className="flex items-center space-x-1 text-sm bg-accent text-primary px-3 py-1.5 rounded-lg hover:bg-accent-hover transition-colors font-medium"
           >
             <Plus size={16} />
-            <span>Add Transaction</span>
+            <span>Add Expense</span>
           </button>
         </div>
       </div>
@@ -134,74 +189,114 @@ export default function TransactionsTab() {
             {sortedTransactions.length === 0 && (
               <tr>
                 <td colSpan="5" className="py-8 text-center text-text-muted">
-                  No transactions found.
+                  No expenses found.
                 </td>
               </tr>
             )}
-            {sortedTransactions.map(tx => (
-              <tr key={tx.id} className="group hover:bg-[#09090b]/50 transition-colors">
-                <td className="py-4 px-4 text-text-muted whitespace-nowrap">
-                  {formatDate(tx.date)}
-                </td>
-                <td className="py-4 px-4 text-text font-medium flex items-center space-x-2">
-                  <span>{tx.description}</span>
-                  {tx.source === 'receipt_scan' && (
-                    <span
-                      title="Scanned from receipt"
-                      className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-purple-500/10 text-purple-400 border border-purple-500/20"
-                    >
-                      <Receipt size={10} className="mr-1" /> Receipt
-                    </span>
-                  )}
-                  {tx.source === 'voice' && (
-                    <span
-                      title="Added via voice receipt"
-                      className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-violet-500/10 text-violet-400 border border-violet-500/20"
-                    >
-                      <Mic size={10} className="mr-1" /> Voice
-                    </span>
-                  )}
-                </td>
-                <td className="py-4 px-4">
-                  <span 
-                    className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border border-zinc-800"
-                    style={{ color: getCategoryColor(tx.categoryId), borderColor: `${getCategoryColor(tx.categoryId)}40`, backgroundColor: `${getCategoryColor(tx.categoryId)}10` }}
-                  >
-                    {getCategoryName(tx.categoryId)}
-                  </span>
-                </td>
-                <td className="py-4 px-4 text-right font-medium text-text">
-                  {formatCurrency(tx.amount)}
-                </td>
-                <td className="py-4 px-4 text-right">
-                  <div className="flex items-center justify-end space-x-1">
-                    {/* Speaker Button - ElevenLabs TTS */}
-                    <button
-                      onClick={() => handleSpeakTransaction(tx)}
-                      title="Speak transaction with ElevenLabs voice"
-                      className={`p-1.5 rounded-md transition-all ${
-                        speakingTxId === tx.id
-                          ? 'bg-violet-500/20 text-violet-400 border border-violet-500/40 animate-pulse opacity-100'
-                          : 'text-zinc-500 hover:text-violet-400 opacity-60 group-hover:opacity-100 hover:bg-zinc-800'
-                      }`}
-                    >
-                      {speakingTxId === tx.id ? (
-                        <VolumeX size={16} />
-                      ) : (
-                        <Volume2 size={16} />
+            {sortedTransactions.map((tx, index) => {
+              const isSuspicious = suspiciousIds.has(tx.id);
+              return (
+                <tr
+                  key={tx.id}
+                  className={`group hover:bg-[#09090b]/50 transition-colors animate-row ${isSuspicious ? 'bg-orange-500/5' : ''}`}
+                  style={{ animationDelay: `${index * 60}ms` }}
+                >
+                  <td className="py-4 px-4 text-text-muted whitespace-nowrap">
+                    {formatDate(tx.date)}
+                  </td>
+                  <td className="py-4 px-4 text-text font-medium">
+                    <div className="flex items-center flex-wrap gap-1.5">
+                      <span>{tx.description}</span>
+                      {tx.source === 'receipt_scan' && (
+                        <span
+                          title="Scanned from receipt"
+                          className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-purple-500/10 text-purple-400 border border-purple-500/20"
+                        >
+                          <Receipt size={10} className="mr-1" /> Receipt
+                        </span>
                       )}
-                    </button>
-
-                    <button
-                      onClick={() => handleEditClick(tx)}
-                      className="p-1.5 text-zinc-500 hover:text-accent opacity-60 group-hover:opacity-100 transition-all rounded-md hover:bg-zinc-800"
+                      {tx.source === 'voice' && (
+                        <span
+                          title="Added via voice receipt"
+                          className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-violet-500/10 text-violet-400 border border-violet-500/20"
+                        >
+                          <Mic size={10} className="mr-1" /> Voice
+                        </span>
+                      )}
+                      {(tx.recurring || tx.isSubscription) && (
+                        <span
+                          title="Recurring subscription"
+                          className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                        >
+                          🔄 Sub
+                        </span>
+                      )}
+                      {isSuspicious && (
+                        <span
+                          title="Flagged as potentially suspicious"
+                          className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-orange-500/10 text-orange-400 border border-orange-500/20 animate-pulse"
+                        >
+                          <AlertTriangle size={10} className="mr-1" /> Review
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="py-4 px-4">
+                    <span 
+                      className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border border-zinc-800"
+                      style={{ color: getCategoryColor(tx.categoryId), borderColor: `${getCategoryColor(tx.categoryId)}40`, backgroundColor: `${getCategoryColor(tx.categoryId)}10` }}
                     >
-                      <Edit2 size={16} />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+                      {getCategoryName(tx.categoryId)}
+                    </span>
+                  </td>
+                  <td className="py-4 px-4 text-right font-medium text-text">
+                    {formatCurrency(tx.amount)}
+                  </td>
+                  <td className="py-4 px-4 text-right">
+                    <div className="flex items-center justify-end space-x-1">
+                      {/* Speaker Button - ElevenLabs TTS */}
+                      <button
+                        onClick={() => handleSpeakTransaction(tx)}
+                        title="Speak transaction with ElevenLabs voice"
+                        className={`p-1.5 rounded-md transition-all ${
+                          speakingTxId === tx.id
+                            ? 'bg-violet-500/20 text-violet-400 border border-violet-500/40 animate-pulse opacity-100'
+                            : 'text-zinc-500 hover:text-violet-400 opacity-60 group-hover:opacity-100 hover:bg-zinc-800'
+                        }`}
+                      >
+                        {speakingTxId === tx.id ? (
+                          <VolumeX size={16} />
+                        ) : (
+                          <Volume2 size={16} />
+                        )}
+                      </button>
+
+                      {/* AI Suspicious Review Button */}
+                      {isSuspicious && (
+                        <button
+                          onClick={() => handleAIReview(tx)}
+                          disabled={reviewingTxId === tx.id}
+                          title="Run AI review on this suspicious expense"
+                          className="p-1.5 rounded-md transition-all text-orange-400 hover:bg-orange-500/10 opacity-70 group-hover:opacity-100 disabled:opacity-40"
+                        >
+                          {reviewingTxId === tx.id
+                            ? <Loader2 size={16} className="animate-spin" />
+                            : <RefreshCw size={16} />
+                          }
+                        </button>
+                      )}
+
+                      <button
+                        onClick={() => handleEditClick(tx)}
+                        className="p-1.5 text-zinc-500 hover:text-accent opacity-60 group-hover:opacity-100 transition-all rounded-md hover:bg-zinc-800"
+                      >
+                        <Edit2 size={16} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -219,5 +314,3 @@ export default function TransactionsTab() {
     </Card>
   );
 }
-
-

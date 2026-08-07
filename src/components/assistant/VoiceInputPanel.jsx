@@ -59,9 +59,14 @@ export default function VoiceInputPanel({ onTransactionReady, onClose }) {
       try {
         const parsed = parseSpokenReceipt(text.trim());
         if (parsed && parsed.amount > 0) {
+          // Calculate confidence based on completeness
+          const issues = [];
+          if (!parsed.description || parsed.description === 'Purchase') issues.push('merchant');
+          if (!parsed.date) issues.push('date');
           setParsedData({
             ...parsed,
             raw_transcript: text.trim(),
+            _confidenceIssues: issues,
           });
         } else {
           setError('Could not extract amount. Try "$15 on Taco Bell" or "Spent 20 dollars at Walmart"');
@@ -163,11 +168,19 @@ If the year/date is not mentioned, use today's date (${new Date().toISOString().
 
             const fullTranscript = data.transcript || inputText || 'Spoken Receipt';
             setInputText(fullTranscript);
+            const merchantVal = data.merchant || 'Spoken Purchase';
+            const amountVal = Number(data.amount) || 0;
+            const dateVal = data.date || new Date().toISOString().split('T')[0];
+            const issues = [];
+            if (!data.merchant || data.merchant === 'Spoken Purchase') issues.push('merchant');
+            if (amountVal === 0) issues.push('amount');
+            if (!data.date) issues.push('date');
             setParsedData({
-              description: data.merchant || 'Spoken Purchase',
-              amount: Number(data.amount) || 0,
-              date: data.date || new Date().toISOString().split('T')[0],
+              description: merchantVal,
+              amount: amountVal,
+              date: dateVal,
               raw_transcript: fullTranscript,
+              _confidenceIssues: issues,
             });
             setIsProcessing(false);
             return true;
@@ -433,18 +446,28 @@ If the year/date is not mentioned, use today's date (${new Date().toISOString().
             <p className="text-xs text-zinc-300 italic">"{parsedData.raw_transcript}"</p>
           </div>
 
+          {parsedData._confidenceIssues?.length > 0 && (
+            <div className="flex items-start gap-2 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2 text-xs text-amber-400">
+              <span className="mt-0.5 shrink-0">⚠️</span>
+              <span>Low confidence on: <strong>{parsedData._confidenceIssues.join(', ')}</strong>. Please review before confirming.</span>
+            </div>
+          )}
+
           <div className="grid grid-cols-3 gap-3 text-center">
-            <div className="bg-zinc-900/50 rounded-lg p-2.5">
+            <div className={`rounded-lg p-2.5 ${parsedData._confidenceIssues?.includes('merchant') ? 'bg-amber-500/10 border border-amber-500/20' : 'bg-zinc-900/50'}`}>
               <p className="text-[10px] text-zinc-500 uppercase">Item</p>
-              <p className="text-sm font-semibold text-text mt-0.5">{parsedData.description}</p>
+              <p className={`text-sm font-semibold mt-0.5 ${parsedData._confidenceIssues?.includes('merchant') ? 'text-amber-400' : 'text-text'}`}>{parsedData.description}</p>
+              {parsedData._confidenceIssues?.includes('merchant') && <p className="text-[9px] text-amber-500 mt-0.5">Needs Review</p>}
             </div>
-            <div className="bg-zinc-900/50 rounded-lg p-2.5">
+            <div className={`rounded-lg p-2.5 ${parsedData._confidenceIssues?.includes('amount') ? 'bg-amber-500/10 border border-amber-500/20' : 'bg-zinc-900/50'}`}>
               <p className="text-[10px] text-zinc-500 uppercase">Amount</p>
-              <p className="text-sm font-semibold text-emerald-400 mt-0.5">${Number(parsedData.amount).toFixed(2)}</p>
+              <p className={`text-sm font-semibold mt-0.5 ${parsedData._confidenceIssues?.includes('amount') ? 'text-amber-400' : 'text-emerald-400'}`}>${Number(parsedData.amount).toFixed(2)}</p>
+              {parsedData._confidenceIssues?.includes('amount') && <p className="text-[9px] text-amber-500 mt-0.5">Needs Review</p>}
             </div>
-            <div className="bg-zinc-900/50 rounded-lg p-2.5">
+            <div className={`rounded-lg p-2.5 ${parsedData._confidenceIssues?.includes('date') ? 'bg-amber-500/10 border border-amber-500/20' : 'bg-zinc-900/50'}`}>
               <p className="text-[10px] text-zinc-500 uppercase">Date</p>
-              <p className="text-sm font-semibold text-text mt-0.5">{parsedData.date}</p>
+              <p className={`text-sm font-semibold mt-0.5 ${parsedData._confidenceIssues?.includes('date') ? 'text-amber-400' : 'text-text'}`}>{parsedData.date}</p>
+              {parsedData._confidenceIssues?.includes('date') && <p className="text-[9px] text-amber-500 mt-0.5">Needs Review</p>}
             </div>
           </div>
 
@@ -459,7 +482,7 @@ If the year/date is not mentioned, use today's date (${new Date().toISOString().
               onClick={handleConfirm}
               className="flex-1 px-3 py-2 text-xs font-semibold bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-400 hover:to-purple-500 text-white rounded-lg transition-all shadow-lg shadow-violet-500/20"
             >
-              Add Transaction
+              Add Expense
             </button>
           </div>
         </div>

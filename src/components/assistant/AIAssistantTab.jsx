@@ -252,7 +252,7 @@ export default function AIAssistantTab() {
         sender: 'assistant',
         source: 'manager',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        text: `**Transaction added**\n\n• **Item:** ${result.transaction.description}\n• **Amount:** $${result.transaction.amount.toFixed(2)}\n• **Category:** ${result.category}\n• **Date:** ${result.transaction.date}\n\nThe transaction has been added to your dashboard and will be reflected in your budget immediately.`,
+        text: `**Expense added**\n\n• **Item:** ${result.transaction.description}\n• **Amount:** $${result.transaction.amount.toFixed(2)}\n• **Category:** ${result.category}\n• **Date:** ${result.transaction.date}\n\nThe expense has been added to your dashboard and will be reflected in your budget immediately.`,
         metrics: { latencyMs: 0 },
       };
 
@@ -291,7 +291,7 @@ export default function AIAssistantTab() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', 'MyVault_Transactions_Export.csv');
+    link.setAttribute('download', 'MyVault_Expenses_Export.csv');
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -300,6 +300,26 @@ export default function AIAssistantTab() {
 
   return (
     <div className="space-y-6 pb-12">
+
+      {/* ── Neon header banner ── */}
+      <div className="relative w-full rounded-2xl overflow-hidden border border-zinc-800/50" style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.12) 0%, rgba(129,140,248,0.12) 50%, rgba(167,139,250,0.12) 100%)' }}>
+        <div className="px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-violet-500/20 border border-violet-500/30 rounded-xl">
+              <Brain size={22} className="text-violet-400" />
+            </div>
+            <div>
+              <p className="text-neon font-bold text-lg tracking-tight leading-none">AI Financial Assistant</p>
+              <p className="text-zinc-500 text-xs mt-1">Multi-agent · Voice · Vision · Real-time</p>
+            </div>
+          </div>
+          <span className="text-[10px] bg-violet-500/20 text-violet-400 font-medium px-2.5 py-1 rounded-full border border-violet-500/30 flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />
+            Live
+          </span>
+        </div>
+      </div>
+
       {/* Action Header & Tools Bar */}
       <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-4 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center space-x-3">

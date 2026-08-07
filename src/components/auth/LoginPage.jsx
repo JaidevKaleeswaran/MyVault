@@ -71,21 +71,23 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-primary flex flex-col items-center justify-center px-4 py-8 selection:bg-accent selection:text-primary">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-8 selection:bg-accent selection:text-primary">
+
+      {/* ── Login card ── */}
+      <div className="w-full max-w-md relative" style={{ zIndex: 2 }}>
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-accent/10 border border-accent/20 mb-4 text-accent">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-accent/10 border border-accent/20 mb-4 text-accent backdrop-blur-sm">
             <ShieldCheck size={32} />
           </div>
-          <h1 className="text-3xl font-bold text-text tracking-tight">
+          <h1 className="text-3xl font-bold text-white tracking-tight drop-shadow-lg">
             My<span className="text-accent">Vault</span>
           </h1>
-          <p className="text-text-muted mt-2 text-sm">
+          <p className="text-zinc-400 mt-2 text-sm">
             {isSignUp ? 'Create your budget vault account' : 'Sign in to access your financial dashboard'}
           </p>
         </div>
 
-        <Card className="backdrop-blur-xl bg-[#18181b]/90 border-zinc-800 shadow-2xl">
+        <Card className="backdrop-blur-xl bg-[#18181b]/80 border-zinc-700/60 shadow-2xl ring-1 ring-white/5">
           {/* Tab Switcher */}
           <div className="flex bg-[#09090b] p-1 rounded-lg mb-6 border border-zinc-800">
             <button
@@ -168,7 +170,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-2 bg-accent hover:bg-accent-hover text-primary font-semibold py-2.5 rounded-lg transition-colors flex items-center justify-center space-x-2 text-sm shadow-md"
+              className="w-full mt-2 bg-accent hover:bg-accent-hover text-primary font-semibold py-2.5 rounded-lg transition-colors flex items-center justify-center space-x-2 text-sm shadow-md disabled:opacity-60"
             >
               <span>{isSignUp ? 'Create Account' : 'Sign In'}</span>
               <ArrowRight size={16} />
@@ -186,7 +188,7 @@ export default function LoginPage() {
               type="button"
               onClick={handleGoogleLogin}
               disabled={loading}
-              className="w-full bg-[#09090b] hover:bg-zinc-900 border border-zinc-800 text-text font-medium py-2.5 rounded-lg transition-colors flex items-center justify-center space-x-2 text-sm"
+              className="w-full bg-[#09090b] hover:bg-zinc-900 border border-zinc-800 text-text font-medium py-2.5 rounded-lg transition-colors flex items-center justify-center space-x-2 text-sm disabled:opacity-60"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24">
                 <path
@@ -218,6 +220,11 @@ export default function LoginPage() {
             </button>
           </div>
         </Card>
+
+        {/* Footer */}
+        <p className="text-center text-[11px] text-zinc-600 mt-6">
+          Encrypted · Private · Synced across devices
+        </p>
       </div>
     </div>
   );

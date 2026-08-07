@@ -5,7 +5,7 @@ import { Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function CategoryModal({ isOpen, onClose, category = null }) {
-  const { dispatch } = useBudget();
+  const { categories, dispatch } = useBudget();
   const [formData, setFormData] = useState({
     name: '',
     limit: '',
@@ -37,24 +37,46 @@ export default function CategoryModal({ isOpen, onClose, category = null }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const cleanName = formData.name.trim();
+    if (!cleanName) {
+      toast.error('Category name is required');
+      return;
+    }
     
     const payload = {
-      name: formData.name,
+      name: cleanName,
       limit: Number(formData.limit),
       color: formData.color,
       endOfCycleAction: formData.endOfCycleAction,
     };
 
+    const normName = cleanName.toLowerCase();
+
     if (isEditing) {
+      const duplicateExists = categories.some(
+        c => c.id !== category.id && c.name.trim().toLowerCase() === normName
+      );
+      if (duplicateExists) {
+        toast.error(`A category named "${cleanName}" already exists.`);
+        return;
+      }
       dispatch({ type: 'UPDATE_CATEGORY', payload: { ...payload, id: category.id } });
       toast.success('Category updated');
     } else {
+      const duplicateExists = categories.some(
+        c => c.name.trim().toLowerCase() === normName
+      );
+      if (duplicateExists) {
+        toast.error(`A category named "${cleanName}" already exists.`);
+        return;
+      }
       dispatch({ type: 'ADD_CATEGORY', payload: { ...payload, id: Date.now().toString() } });
       toast.success('Category added');
     }
     
     onClose();
   };
+
 
   const handleDelete = () => {
     if (window.confirm('Are you sure you want to delete this category?')) {
@@ -85,7 +107,7 @@ export default function CategoryModal({ isOpen, onClose, category = null }) {
         </div>
 
         <div>
-          <label className="block text-sm text-text-muted mb-1">Budget Limit ($)</label>
+          <label className="block text-sm text-text-muted mb-1">Expenditure Limit ($)</label>
           <input
             type="number"
             name="limit"

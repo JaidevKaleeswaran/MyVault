@@ -86,6 +86,13 @@ export default function ReceiptScannerModal({ isOpen, onClose }) {
       setScanResult(json);
       toast.success('Receipt scanned successfully!');
 
+      // Detect low-confidence fields
+      const scanIssues = [];
+      if (!json.data?.merchant || json.data.merchant === 'Unknown') scanIssues.push('merchant');
+      if (!json.data?.total || Number(json.data.total) === 0) scanIssues.push('amount');
+      if (!json.data?.date) scanIssues.push('date');
+      json._scanIssues = scanIssues;
+
       // Use the Manager Agent's AI categorization to match the category
       let matchedCategoryId = categories.length > 0 ? categories[0].id : '';
       if (json.data?.suggested_category) {
@@ -243,6 +250,13 @@ export default function ReceiptScannerModal({ isOpen, onClose }) {
               </button>
             </div>
 
+            {scanResult._scanIssues?.length > 0 && (
+              <div className="flex items-start gap-2 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2 text-xs text-amber-400">
+                <span className="mt-0.5 shrink-0">⚠️</span>
+                <span>Low confidence on: <strong>{scanResult._scanIssues.join(', ')}</strong> — please verify these fields before saving.</span>
+              </div>
+            )}
+
 
             {/* Line items preview if available */}
             {scanResult.data?.line_items && scanResult.data.line_items.length > 0 && (
@@ -266,24 +280,32 @@ export default function ReceiptScannerModal({ isOpen, onClose }) {
             )}
 
             <div>
-              <label className="block text-sm text-text-muted mb-1">Description (Merchant)</label>
+              <label className={`block text-sm mb-1 ${scanResult._scanIssues?.includes('merchant') ? 'text-amber-400' : 'text-text-muted'}`}>
+                Description (Merchant){scanResult._scanIssues?.includes('merchant') ? ' ⚠ Verify' : ''}
+              </label>
               <input
                 type="text"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="w-full bg-[#09090b] border border-zinc-700 rounded-lg px-3 py-2 text-text focus:outline-none focus:border-accent transition-colors"
+                className={`w-full bg-[#09090b] border rounded-lg px-3 py-2 text-text focus:outline-none transition-colors ${
+                  scanResult._scanIssues?.includes('merchant') ? 'border-amber-500/50 focus:border-amber-400' : 'border-zinc-700 focus:border-accent'
+                }`}
                 required
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm text-text-muted mb-1">Amount ($)</label>
+                <label className={`block text-sm mb-1 ${scanResult._scanIssues?.includes('amount') ? 'text-amber-400' : 'text-text-muted'}`}>
+                  Amount ($){scanResult._scanIssues?.includes('amount') ? ' ⚠ Verify' : ''}
+                </label>
                 <input
                   type="number"
                   value={formData.amount}
                   onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                  className="w-full bg-[#09090b] border border-zinc-700 rounded-lg px-3 py-2 text-text focus:outline-none focus:border-accent transition-colors"
+                  className={`w-full bg-[#09090b] border rounded-lg px-3 py-2 text-text focus:outline-none transition-colors ${
+                    scanResult._scanIssues?.includes('amount') ? 'border-amber-500/50 focus:border-amber-400' : 'border-zinc-700 focus:border-accent'
+                  }`}
                   min="0.01"
                   step="0.01"
                   required
@@ -337,7 +359,7 @@ export default function ReceiptScannerModal({ isOpen, onClose }) {
                     Processing...
                   </>
                 ) : (
-                  'Save Transaction'
+                  'Save Expense'
                 )}
               </button>
             </div>

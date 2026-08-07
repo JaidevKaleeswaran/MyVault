@@ -30,49 +30,121 @@ export default function CategoryGrid() {
     }
   };
 
-  const handleQuickFill = (templateType) => {
+  const QUICK_FILL_TEMPLATES = {
+    '50_30_20': {
+      label: '50/30/20 Rule',
+      description: '50% Needs · 30% Wants · 20% Savings',
+      splits: [
+        { name: 'Rent / Housing',    percent: 0.30, color: '#f97316', endOfCycleAction: 'none' },
+        { name: 'Groceries',         percent: 0.10, color: '#10b981', endOfCycleAction: 'none' },
+        { name: 'Bills & Utilities', percent: 0.10, color: '#facc15', endOfCycleAction: 'none' },
+        { name: 'Dining Out',        percent: 0.10, color: '#f43f5e', endOfCycleAction: 'none' },
+        { name: 'Entertainment',     percent: 0.10, color: '#06b6d4', endOfCycleAction: 'none' },
+        { name: 'Shopping',          percent: 0.10, color: '#a855f7', endOfCycleAction: 'none' },
+        { name: 'Savings',           percent: 0.20, color: '#3b82f6', endOfCycleAction: 'rollover' },
+      ],
+    },
+    survivor: {
+      label: 'Paycheck Survivor',
+      description: 'Essentials-first for tight budgets',
+      splits: [
+        { name: 'Rent / Housing',    percent: 0.35, color: '#f97316', endOfCycleAction: 'none' },
+        { name: 'Groceries',         percent: 0.15, color: '#10b981', endOfCycleAction: 'none' },
+        { name: 'Bills & Utilities', percent: 0.20, color: '#facc15', endOfCycleAction: 'none' },
+        { name: 'Transport / Gas',   percent: 0.10, color: '#84cc16', endOfCycleAction: 'none' },
+        { name: 'Emergency Fund',    percent: 0.10, color: '#3b82f6', endOfCycleAction: 'rollover' },
+        { name: 'Personal',          percent: 0.10, color: '#a855f7', endOfCycleAction: 'none' },
+      ],
+    },
+    student: {
+      label: 'Student / Entry-Level',
+      description: 'Built for low-income starting out',
+      splits: [
+        { name: 'Rent / Housing',    percent: 0.40, color: '#f97316', endOfCycleAction: 'none' },
+        { name: 'Food & Groceries',  percent: 0.20, color: '#10b981', endOfCycleAction: 'none' },
+        { name: 'Transport',         percent: 0.10, color: '#84cc16', endOfCycleAction: 'none' },
+        { name: 'Subscriptions',     percent: 0.05, color: '#a855f7', endOfCycleAction: 'none' },
+        { name: 'Entertainment',     percent: 0.10, color: '#06b6d4', endOfCycleAction: 'none' },
+        { name: 'Savings',           percent: 0.15, color: '#3b82f6', endOfCycleAction: 'rollover' },
+      ],
+    },
+    aggressive: {
+      label: 'Aggressive Saver',
+      description: 'Maximize savings & investments',
+      splits: [
+        { name: 'Savings',           percent: 0.30, color: '#3b82f6', endOfCycleAction: 'rollover' },
+        { name: 'Investments',       percent: 0.10, color: '#10b981', endOfCycleAction: 'rollover' },
+        { name: 'Rent / Housing',    percent: 0.30, color: '#f97316', endOfCycleAction: 'none' },
+        { name: 'Food & Groceries',  percent: 0.15, color: '#facc15', endOfCycleAction: 'none' },
+        { name: 'Fun & Social',      percent: 0.10, color: '#06b6d4', endOfCycleAction: 'none' },
+        { name: 'Miscellaneous',     percent: 0.05, color: '#71717a', endOfCycleAction: 'none' },
+      ],
+    },
+    family: {
+      label: 'Family Budget',
+      description: 'For households with dependants',
+      splits: [
+        { name: 'Rent / Mortgage',   percent: 0.30, color: '#f97316', endOfCycleAction: 'none' },
+        { name: 'Groceries',         percent: 0.20, color: '#10b981', endOfCycleAction: 'none' },
+        { name: 'Childcare / School',percent: 0.15, color: '#f43f5e', endOfCycleAction: 'none' },
+        { name: 'Transport',         percent: 0.10, color: '#84cc16', endOfCycleAction: 'none' },
+        { name: 'Bills & Utilities', percent: 0.10, color: '#facc15', endOfCycleAction: 'none' },
+        { name: 'Entertainment',     percent: 0.05, color: '#06b6d4', endOfCycleAction: 'none' },
+        { name: 'Emergency Fund',    percent: 0.10, color: '#3b82f6', endOfCycleAction: 'rollover' },
+      ],
+    },
+  };
+
+  const handleQuickFill = (templateKey) => {
     if (totalIncome === 0) {
       toast.error('Set up your income first to use Quick-Fill.');
       setIsQuickFillOpen(false);
       return;
     }
 
-    let splits = [];
-    if (templateType === 'balanced') {
-      splits = [
-        { name: 'Savings', percent: 0.40, color: '#3b82f6', endOfCycleAction: 'rollover' },
-        { name: 'Food', percent: 0.25, color: '#10b981', endOfCycleAction: 'none' },
-        { name: 'Gas/Transport', percent: 0.15, color: '#facc15', endOfCycleAction: 'none' },
-        { name: 'Entertainment', percent: 0.10, color: '#06b6d4', endOfCycleAction: 'none' },
-        { name: 'Shopping', percent: 0.10, color: '#a855f7', endOfCycleAction: 'none' },
-      ];
-    } else if (templateType === 'savings') {
-      splits = [
-        { name: 'Savings', percent: 0.60, color: '#3b82f6', endOfCycleAction: 'rollover' },
-        { name: 'Food', percent: 0.15, color: '#10b981', endOfCycleAction: 'none' },
-        { name: 'Gas/Transport', percent: 0.15, color: '#facc15', endOfCycleAction: 'none' },
-        { name: 'Ent/Shopping', percent: 0.10, color: '#a855f7', endOfCycleAction: 'none' },
-      ];
-    }
+    const template = QUICK_FILL_TEMPLATES[templateKey];
+    if (!template) return;
 
-    const newCategories = splits.map(split => ({
-      id: `qf-${Date.now()}-${Math.random()}`,
-      name: split.name,
-      limit: Math.round(totalIncome * split.percent),
-      color: split.color,
-      endOfCycleAction: split.endOfCycleAction,
-    }));
+    // Smart merge: update existing matching category limits or add new ones without duplicates
+    const updatedCategories = [...categories];
 
-    // Merge/Add alongside existing categories
-    dispatch({ type: 'REPLACE_CATEGORIES', payload: [...categories, ...newCategories] });
-    toast.success(`${templateType === 'balanced' ? 'Balanced' : 'Savings-First'} template added`);
+    template.splits.forEach(split => {
+      const splitNameNorm = split.name.trim().toLowerCase();
+      const existingIndex = updatedCategories.findIndex(c => {
+        const catNorm = c.name.trim().toLowerCase();
+        return catNorm === splitNameNorm || catNorm.includes(splitNameNorm) || splitNameNorm.includes(catNorm);
+      });
+
+      const newLimit = Math.round(totalIncome * split.percent);
+
+      if (existingIndex >= 0) {
+        updatedCategories[existingIndex] = {
+          ...updatedCategories[existingIndex],
+          limit: newLimit,
+          color: split.color || updatedCategories[existingIndex].color,
+          endOfCycleAction: split.endOfCycleAction || updatedCategories[existingIndex].endOfCycleAction,
+        };
+      } else {
+        updatedCategories.push({
+          id: `qf-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+          name: split.name,
+          limit: newLimit,
+          color: split.color,
+          endOfCycleAction: split.endOfCycleAction,
+        });
+      }
+    });
+
+    dispatch({ type: 'REPLACE_CATEGORIES', payload: updatedCategories });
+    toast.success(`"${template.label}" template applied!`);
     setIsQuickFillOpen(false);
   };
+
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-text">Budget Categories</h2>
+        <h2 className="text-xl font-semibold text-neon">Category Expenditure</h2>
         <div className="flex space-x-2 relative">
           <div className="relative">
             <button
@@ -84,21 +156,17 @@ export default function CategoryGrid() {
             </button>
             
             {isQuickFillOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-[#18181b] border border-zinc-800 rounded-xl shadow-xl z-20 py-1 overflow-hidden">
-                <button
-                  onClick={() => handleQuickFill('balanced')}
-                  className="w-full text-left px-4 py-2 text-sm hover:bg-zinc-800 transition-colors text-text"
-                >
-                  <div className="font-medium">Balanced</div>
-                  <div className="text-xs text-text-muted">40% Save, 25% Food...</div>
-                </button>
-                <button
-                  onClick={() => handleQuickFill('savings')}
-                  className="w-full text-left px-4 py-2 text-sm hover:bg-zinc-800 transition-colors text-text border-t border-zinc-800"
-                >
-                  <div className="font-medium">Savings-First</div>
-                  <div className="text-xs text-text-muted">60% Save, 15% Food...</div>
-                </button>
+              <div className="absolute right-0 mt-2 w-64 bg-[#18181b] border border-zinc-800 rounded-xl shadow-xl z-20 py-1 overflow-hidden">
+                {Object.entries(QUICK_FILL_TEMPLATES).map(([key, tpl]) => (
+                  <button
+                    key={key}
+                    onClick={() => handleQuickFill(key)}
+                    className="w-full text-left px-4 py-2.5 text-sm hover:bg-zinc-800 transition-colors text-text border-b border-zinc-800/60 last:border-b-0"
+                  >
+                    <div className="font-medium">{tpl.label}</div>
+                    <div className="text-xs text-text-muted mt-0.5">{tpl.description}</div>
+                  </button>
+                ))}
               </div>
             )}
           </div>
@@ -188,7 +256,7 @@ export default function CategoryGrid() {
 
         {categories.length === 0 && (
           <div className="col-span-full py-8 text-center border border-dashed border-zinc-700 rounded-xl">
-            <p className="text-text-muted mb-2">No budget categories yet.</p>
+            <p className="text-text-muted mb-2">No expenditure categories yet.</p>
             <button
               onClick={handleAddClick}
               className="text-accent hover:underline text-sm"

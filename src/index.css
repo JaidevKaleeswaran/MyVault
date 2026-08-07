@@ -39,3 +39,49 @@
     background: var(--color-text-muted);
   }
 }
+
+/* ── Neon gradient text ──────────────────────────────────────────────────────
+   Apply to primary section headings for vibrant neon effect.
+   Usage: className="text-neon"
+*/
+.text-neon {
+  background: linear-gradient(120deg, #10b981 0%, #818cf8 55%, #a78bfa 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  display: inline-block;
+}
+
+/* ── Expense table row fade-in ───────────────────────────────────────────────
+   Applied to <tr> elements via inline animationDelay for stagger effect.
+   The card wrapper is NOT animated — only the row text.
+*/
+@keyframes fadeInRow {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-row {
+  animation: fadeInRow 0.45s ease-out both;
+}
+
+/* ── Widget reveal (used by Reveal.jsx wrapper) ──────────────────────────────
+   GSAP handles the actual animation; this is a safety fallback
+   for environments where JS animations haven't fired yet.
+*/
+@keyframes revealFade {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

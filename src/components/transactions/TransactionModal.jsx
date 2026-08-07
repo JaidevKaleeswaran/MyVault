@@ -10,6 +10,7 @@ export default function TransactionModal({ isOpen, onClose, transaction = null }
     categoryId: '',
     description: '',
     date: new Date().toISOString().split('T')[0],
+    isSubscription: false,
   });
 
   const isEditing = !!transaction;
@@ -22,6 +23,7 @@ export default function TransactionModal({ isOpen, onClose, transaction = null }
           categoryId: transaction.categoryId,
           description: transaction.description,
           date: transaction.date,
+          isSubscription: !!(transaction.isSubscription || transaction.recurring),
         });
       } else {
         setFormData({
@@ -29,14 +31,15 @@ export default function TransactionModal({ isOpen, onClose, transaction = null }
           categoryId: categories.length > 0 ? categories[0].id : '',
           description: '',
           date: new Date().toISOString().split('T')[0],
+          isSubscription: false,
         });
       }
     }
   }, [isOpen, transaction, categories]);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
   const handleSubmit = (e) => {
@@ -51,23 +54,25 @@ export default function TransactionModal({ isOpen, onClose, transaction = null }
       categoryId: formData.categoryId,
       description: formData.description,
       date: formData.date,
+      isSubscription: formData.isSubscription,
+      recurring: formData.isSubscription,
     };
 
     if (isEditing) {
       dispatch({ type: 'UPDATE_TRANSACTION', payload: { ...payload, id: transaction.id } });
-      toast.success('Transaction updated');
+      toast.success('Expense updated');
     } else {
       dispatch({ type: 'ADD_TRANSACTION', payload: { ...payload, id: Date.now().toString() } });
-      toast.success('Transaction added');
+      toast.success('Expense added');
     }
     
     onClose();
   };
 
   const handleDelete = () => {
-    if (window.confirm('Are you sure you want to delete this transaction?')) {
+    if (window.confirm('Are you sure you want to delete this expense?')) {
       dispatch({ type: 'DELETE_TRANSACTION', payload: transaction.id });
-      toast.success('Transaction deleted');
+      toast.success('Expense deleted');
       onClose();
     }
   };
@@ -76,7 +81,7 @@ export default function TransactionModal({ isOpen, onClose, transaction = null }
     <Modal 
       isOpen={isOpen} 
       onClose={onClose} 
-      title={isEditing ? 'Edit Transaction' : 'Add Transaction'}
+      title={isEditing ? 'Edit Expense' : 'Add Expense'}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
@@ -135,12 +140,37 @@ export default function TransactionModal({ isOpen, onClose, transaction = null }
           />
         </div>
 
+        {/* Subscription toggle */}
+        <div className="flex items-center justify-between bg-[#09090b] border border-zinc-700 rounded-lg px-3 py-3">
+          <div>
+            <p className="text-sm text-text font-medium">Mark as Subscription</p>
+            <p className="text-xs text-text-muted mt-0.5">Recurring monthly charge (Netflix, gym, etc.)</p>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer ml-4 shrink-0">
+            <input
+              type="checkbox"
+              name="isSubscription"
+              checked={formData.isSubscription}
+              onChange={handleChange}
+              className="sr-only peer"
+            />
+            <div className="w-10 h-5 bg-zinc-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+          </label>
+        </div>
+
+        {formData.isSubscription && (
+          <div className="flex items-center gap-2 text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-2">
+            <span>🔄</span>
+            <span>This expense will be tracked as a recurring subscription and counted in your subscription total.</span>
+          </div>
+        )}
+
         <div className="pt-4 flex space-x-3">
           <button
             type="submit"
             className="flex-1 bg-accent text-primary font-medium py-2 rounded-lg hover:bg-accent-hover transition-colors"
           >
-            {isEditing ? 'Save Changes' : 'Add Transaction'}
+            {isEditing ? 'Save Changes' : 'Add Expense'}
           </button>
           
           {isEditing && (
