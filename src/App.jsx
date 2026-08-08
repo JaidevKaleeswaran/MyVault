@@ -32,10 +32,10 @@ function MainApp() {
       >
         <Suspense fallback={null}>
           <Beams
-            beamWidth={2.5}
-            beamHeight={18}
-            beamNumber={12}
-            lightColor="#10b981"
+            beamWidth={6}
+            beamHeight={45}
+            beamNumber={24}
+            lightColor="#e7b956"
             speed={1.5}
             noiseIntensity={1.6}
             scale={0.18}
@@ -51,7 +51,7 @@ function MainApp() {
           position: 'fixed',
           inset: 0,
           zIndex: 1,
-          background: 'rgba(0,0,0,0.45)',
+          background: 'rgba(22,22,20,0.55)',
           pointerEvents: 'none',
         }}
       />
@@ -64,25 +64,25 @@ function MainApp() {
           <VerifyEmailPage />
         ) : (
           <>
-            <header className="py-4 px-6 border-b border-zinc-800/60 flex items-center justify-between max-w-6xl mx-auto backdrop-blur-sm bg-black/30">
-              <div className="flex items-center space-x-2">
-                <h1 className="text-2xl font-bold tracking-tight">
-                  My<span className="text-accent">Vault</span>
+            <header className="py-3 px-4 sm:px-6 border-b border-border/60 flex items-center justify-between max-w-6xl mx-auto backdrop-blur-md bg-[#161614]/40">
+              <div className="flex items-center space-x-2 shrink-0">
+                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-text">
+                  Stack<span className="text-accent">ed</span>
                 </h1>
               </div>
 
-              <div className="flex items-center space-x-3">
-                <div className="flex items-center space-x-2 bg-[#18181b]/80 border border-zinc-800 px-3 py-1.5 rounded-full text-xs backdrop-blur-sm">
+              <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
+                <div className="flex items-center space-x-1.5 sm:space-x-2 bg-card/80 border border-border px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs backdrop-blur-sm min-w-0">
                   {user.photoURL ? (
-                    <img src={user.photoURL} alt={user.displayName} className="w-5 h-5 rounded-full" />
+                    <img src={user.photoURL} alt={user.displayName} className="w-4 h-4 sm:w-5 sm:h-5 rounded-full shrink-0" />
                   ) : (
-                    <div className="w-5 h-5 rounded-full bg-accent/20 text-accent flex items-center justify-center text-[10px] font-bold">
+                    <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-accent/20 text-accent flex items-center justify-center text-[9px] sm:text-[10px] font-bold shrink-0">
                       {user.displayName ? user.displayName[0].toUpperCase() : 'U'}
                     </div>
                   )}
-                  <span className="font-medium text-text">{user.displayName || user.email}</span>
+                  <span className="font-medium text-text truncate max-w-[110px] sm:max-w-none">{user.displayName || user.email}</span>
                   {user.isGuest && (
-                    <span className="text-[10px] bg-zinc-800 text-zinc-400 px-1.5 py-0.2 rounded">Guest</span>
+                    <span className="text-[9px] sm:text-[10px] bg-[#2b2924] text-zinc-400 px-1.5 py-0.2 rounded shrink-0">Guest</span>
                   )}
                 </div>
 
@@ -90,7 +90,7 @@ function MainApp() {
                   type="button"
                   onClick={logout}
                   title="Log Out"
-                  className="p-2 text-zinc-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors border border-transparent hover:border-red-500/20"
+                  className="p-1.5 sm:p-2 text-zinc-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors border border-transparent hover:border-red-500/20 shrink-0"
                 >
                   <LogOut size={16} />
                 </button>
@@ -99,7 +99,7 @@ function MainApp() {
 
             <TabNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
 
-            <main className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
+            <main className="max-w-6xl mx-auto p-3 sm:p-6 lg:p-8">
               <div className="animate-in fade-in duration-300">
                 {activeTab === 'home' && <HomeTab />}
                 {activeTab === 'assistant' && <AIAssistantTab />}
@@ -121,14 +121,14 @@ export default function App() {
         position="bottom-right"
         toastOptions={{
           style: {
-            background: '#18181b',
-            color: '#f3f4f6',
-            border: '1px solid #27272a',
+            background: '#22201d',
+            color: '#faf4e8',
+            border: '1px solid #38342e',
           },
           success: {
             iconTheme: {
-              primary: '#10b981',
-              secondary: '#18181b',
+              primary: '#e7b956',
+              secondary: '#22201d',
             },
           },
         }}

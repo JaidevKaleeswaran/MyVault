@@ -161,7 +161,7 @@ export default function AIAssistantTab() {
           sender: 'assistant',
           source: 'assistant',
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          text: `Hello ${user?.displayName || 'there'}! I'm your AI Financial Assistant.\n\nI have direct access to all your MyVault data — **${budgetState.transactions?.length || 0} transactions**, **${budgetState.categories?.length || 0} budget categories**, and **${budgetState.incomeSources?.length || 0} income sources**.\n\n**Three ways to interact:**\n• **Type** a question about your finances\n• **Speak** a receipt using ElevenLabs AI Voice\n• **Scan** a receipt photo with Vision AI\n\nAll data is processed in real-time. Ask me anything!`,
+          text: `Hello ${user?.displayName || 'there'}! I'm your AI Financial Assistant.\n\nI have direct access to all your Stacked data — **${budgetState.transactions?.length || 0} transactions**, **${budgetState.categories?.length || 0} budget categories**, and **${budgetState.incomeSources?.length || 0} income sources**.\n\n**Three ways to interact:**\n• **Type** a question about your finances\n• **Speak** a receipt using ElevenLabs AI Voice\n• **Scan** a receipt photo with Vision AI\n\nAll data is processed in real-time. Ask me anything!`,
         }
       });
     }
@@ -291,7 +291,7 @@ export default function AIAssistantTab() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', 'MyVault_Expenses_Export.csv');
+    link.setAttribute('download', 'Stacked_Expenses_Export.csv');
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -301,27 +301,27 @@ export default function AIAssistantTab() {
   return (
     <div className="space-y-6 pb-12">
 
-      {/* ── Neon header banner ── */}
-      <div className="relative w-full rounded-2xl overflow-hidden border border-zinc-800/50" style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.12) 0%, rgba(129,140,248,0.12) 50%, rgba(167,139,250,0.12) 100%)' }}>
+      {/* ── Brand header banner ── */}
+      <div className="relative w-full rounded-2xl overflow-hidden border border-border" style={{ background: 'linear-gradient(135deg, rgba(231,185,86,0.12) 0%, rgba(46,91,69,0.18) 50%, rgba(140,109,55,0.15) 100%)' }}>
         <div className="px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-violet-500/20 border border-violet-500/30 rounded-xl">
-              <Brain size={22} className="text-violet-400" />
+            <div className="p-2 bg-accent/20 border border-accent/30 rounded-xl">
+              <Brain size={22} className="text-accent" />
             </div>
             <div>
               <p className="text-neon font-bold text-lg tracking-tight leading-none">AI Financial Assistant</p>
-              <p className="text-zinc-500 text-xs mt-1">Multi-agent · Voice · Vision · Real-time</p>
+              <p className="text-text-muted text-xs mt-1">Multi-agent · Voice · Vision · Real-time</p>
             </div>
           </div>
-          <span className="text-[10px] bg-violet-500/20 text-violet-400 font-medium px-2.5 py-1 rounded-full border border-violet-500/30 flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />
+          <span className="text-[10px] bg-[#2e5b45]/20 text-[#3a7056] font-medium px-2.5 py-1 rounded-full border border-[#2e5b45]/30 flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#3a7056] animate-pulse" />
             Live
           </span>
         </div>
       </div>
 
       {/* Action Header & Tools Bar */}
-      <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-4 flex flex-wrap items-center justify-between gap-4">
+      <div className="bg-card border border-border rounded-xl p-4 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center space-x-3">
           <div className="p-2.5 bg-accent/10 rounded-lg text-accent">
             <Sparkles size={20} />
@@ -329,11 +329,11 @@ export default function AIAssistantTab() {
           <div>
             <h2 className="text-base font-semibold text-text flex items-center gap-2">
               AI Financial Assistant
-              <span className="text-[10px] bg-violet-500/20 text-violet-400 font-medium px-2 py-0.5 rounded-full flex items-center gap-1">
+              <span className="text-[10px] bg-accent/20 text-accent font-medium px-2 py-0.5 rounded-full flex items-center gap-1">
                 <Brain size={10} /> Multi-Agent
               </span>
             </h2>
-            <p className="text-xs text-zinc-400">Voice, camera, and chat — powered by coordinated AI agents.</p>
+            <p className="text-xs text-text-muted">Voice, camera, and chat — powered by coordinated AI agents.</p>
           </div>
         </div>
 
@@ -341,8 +341,8 @@ export default function AIAssistantTab() {
           <button
             onClick={() => { setShowVoicePanel(!showVoicePanel); setShowReceiptScanner(false); }}
             className={`flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${showVoicePanel
-                ? 'bg-violet-500/20 text-violet-300 border-violet-500/30'
-                : 'bg-zinc-800 hover:bg-zinc-700 text-text border-zinc-700'
+                ? 'bg-accent/20 text-accent border-accent/40'
+                : 'bg-primary hover:bg-[#2b2924] text-text border-border'
               }`}
           >
             <Mic size={14} />
@@ -351,7 +351,7 @@ export default function AIAssistantTab() {
 
           <button
             onClick={() => { setShowReceiptScanner(true); setShowVoicePanel(false); }}
-            className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium bg-zinc-800 hover:bg-zinc-700 text-text rounded-lg border border-zinc-700 transition-colors"
+            className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium bg-primary hover:bg-[#2b2924] text-text rounded-lg border border-border transition-colors"
           >
             <Camera size={14} />
             <span>Scan Receipt</span>
@@ -359,7 +359,7 @@ export default function AIAssistantTab() {
 
           <button
             onClick={() => setShowVoiceAuditLog(true)}
-            className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium bg-violet-500/10 hover:bg-violet-500/20 text-violet-300 rounded-lg border border-violet-500/30 transition-colors"
+            className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium bg-[#8c6d37]/15 hover:bg-[#8c6d37]/25 text-[#a48246] rounded-lg border border-[#8c6d37]/30 transition-colors"
             title="Inspect verbatim user speech transcripts & voice logs"
           >
             <ShieldCheck size={14} />
@@ -368,7 +368,7 @@ export default function AIAssistantTab() {
 
           <button
             onClick={handleExportCSV}
-            className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium bg-zinc-800 hover:bg-zinc-700 text-text rounded-lg border border-zinc-700 transition-colors"
+            className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium bg-primary hover:bg-[#2b2924] text-text rounded-lg border border-border transition-colors"
           >
             <Download size={14} />
             <span>CSV Export</span>
@@ -405,7 +405,7 @@ export default function AIAssistantTab() {
       />
 
       {/* Main Chat Stream Container */}
-      <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-4 sm:p-6 min-h-[420px] flex flex-col justify-between">
+      <div className="bg-card border border-border rounded-xl p-4 sm:p-6 min-h-[420px] flex flex-col justify-between">
         <div className="space-y-6 overflow-y-auto max-h-[560px] pr-2">
           {messages.map((msg) => (
             <div key={msg.id} className="space-y-3">
@@ -413,26 +413,26 @@ export default function AIAssistantTab() {
                 /* User Message Bubble */
                 <div className="flex justify-end">
                   <div className={`max-w-lg rounded-2xl rounded-tr-xs px-4 py-3 text-sm ${msg.isVoice
-                      ? 'bg-violet-500/10 border border-violet-500/20 text-text'
+                      ? 'bg-[#8c6d37]/15 border border-[#8c6d37]/30 text-text'
                       : 'bg-accent/10 border border-accent/20 text-text'
                     }`}>
                     <p className="font-medium">{msg.text}</p>
-                    <span className={`text-[10px] block text-right mt-1 ${msg.isVoice ? 'text-violet-400/60' : 'text-accent/60'
+                    <span className={`text-[10px] block text-right mt-1 ${msg.isVoice ? 'text-[#a48246]' : 'text-accent/60'
                       }`}>{msg.timestamp}</span>
                   </div>
                 </div>
               ) : (
                 /* AI Assistant Response Box */
-                <div className="bg-[#09090b] border border-zinc-800 rounded-2xl p-4 sm:p-5 space-y-3">
+                <div className="bg-primary border border-border rounded-2xl p-4 sm:p-5 space-y-3">
                   {/* Header */}
-                  <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3">
+                  <div className="flex items-center justify-between border-b border-border/80 pb-3">
                     <div className="flex items-center space-x-2">
                       <div className="w-6 h-6 rounded-full bg-accent/20 text-accent flex items-center justify-center">
                         <Bot size={14} />
                       </div>
                       <span className="text-xs font-semibold text-text">AI Financial Advisor</span>
                     </div>
-                    <span className="text-[10px] text-zinc-500">{msg.timestamp}</span>
+                    <span className="text-[10px] text-text-muted">{msg.timestamp}</span>
                   </div>
 
                   {/* Agent Pipeline Badge */}
@@ -450,7 +450,7 @@ export default function AIAssistantTab() {
           ))}
 
           {isProcessing && (
-            <div className="flex items-center space-x-2 text-xs text-zinc-400 bg-[#09090b] p-4 rounded-xl border border-zinc-800 animate-pulse">
+            <div className="flex items-center space-x-2 text-xs text-text-muted bg-primary p-4 rounded-xl border border-border animate-pulse">
               <RefreshCw size={14} className="animate-spin text-accent" />
               <span>Processing through agent pipeline...</span>
             </div>
@@ -461,14 +461,14 @@ export default function AIAssistantTab() {
 
         {/* Quick Questions */}
         {messages.length <= 1 && (
-          <div className="mt-4 pt-3 border-t border-zinc-800">
-            <p className="text-[10px] text-zinc-500 uppercase tracking-wider font-medium mb-2">Quick Questions</p>
+          <div className="mt-4 pt-3 border-t border-border">
+            <p className="text-[10px] text-text-muted uppercase tracking-wider font-medium mb-2">Quick Questions</p>
             <div className="flex flex-wrap gap-2">
               {QUICK_QUESTIONS.map((q, i) => (
                 <button
                   key={i}
                   onClick={() => handleSendQuery(q.text)}
-                  className="px-3 py-1.5 text-xs bg-zinc-800/50 hover:bg-zinc-700/50 text-zinc-300 hover:text-text rounded-lg border border-zinc-800 hover:border-zinc-700 transition-colors"
+                  className="px-3 py-1.5 text-xs bg-primary hover:bg-[#2b2924] text-zinc-300 hover:text-text rounded-lg border border-border transition-colors"
                 >
                   <span>{q.text}</span>
                 </button>
@@ -478,12 +478,12 @@ export default function AIAssistantTab() {
         )}
 
         {/* Input Bar */}
-        <div className="mt-4 pt-3 border-t border-zinc-800 flex items-center space-x-2">
+        <div className="mt-4 pt-3 border-t border-border flex items-center space-x-2">
           <button
             onClick={() => setShowVoicePanel(!showVoicePanel)}
             className={`p-3 rounded-xl transition-colors border ${showVoicePanel
-                ? 'bg-violet-500/20 text-violet-400 border-violet-500/30'
-                : 'bg-zinc-800 text-zinc-400 hover:text-violet-400 hover:bg-violet-500/10 border-zinc-700 hover:border-violet-500/30'
+                ? 'bg-accent/20 text-accent border-accent/40'
+                : 'bg-primary text-text-muted hover:text-accent hover:bg-accent/10 border-border'
               }`}
             title="Voice Receipt"
           >

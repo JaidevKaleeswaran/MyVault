@@ -49,42 +49,103 @@ export default function IncomeSettings() {
   };
 
   return (
-    <Card className="h-full flex flex-col space-y-6">
-      {/* Primary Salary Featured Box */}
-      <div className="bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-transparent border border-emerald-500/25 rounded-xl p-4 space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <div className="p-2 bg-emerald-500/20 text-emerald-400 rounded-lg">
-              <Briefcase size={18} />
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-text flex items-center gap-1.5">
-                Primary Salary
-                <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.2 rounded font-medium">Main</span>
-              </h3>
-              <p className="text-xs text-text-muted">
-                {primarySalary ? `${primarySalary.name} • ${primarySalary.frequency}` : 'No base salary configured'}
-              </p>
-            </div>
+    <div className="space-y-6">
+      {/* ── Income Sources Widget ── */}
+      <Card>
+        <div className="flex items-center justify-between flex-wrap gap-2 mb-4">
+          <div>
+            <h2 className="text-xl font-semibold text-text">Income Sources</h2>
+            <p className="text-xs text-text-muted mt-0.5">Base salary & additional earnings</p>
           </div>
           <button
-            onClick={() => setIsSalaryModalOpen(true)}
-            className="flex items-center space-x-1 text-xs bg-emerald-500 text-black px-3 py-1.5 rounded-lg hover:bg-emerald-400 transition-colors font-semibold shadow-sm"
+            type="button"
+            onClick={handleAddClick}
+            className="flex items-center space-x-1 text-xs bg-accent text-primary px-3 py-1.5 rounded-lg hover:bg-accent-hover transition-colors font-semibold"
           >
-            <DollarSign size={14} />
-            <span>{primarySalary ? 'Edit Salary' : 'Set Salary'}</span>
+            <Plus size={14} />
+            <span>Add Source</span>
           </button>
         </div>
 
-        {primarySalary && (
-          <div className="pt-2 border-t border-emerald-500/20 flex justify-between items-baseline">
-            <span className="text-xs text-zinc-400">Salary Amount</span>
-            <span className="text-lg font-bold text-emerald-400">{formatCurrency(primarySalary.amount)} <span className="text-xs font-normal text-zinc-400">/ {primarySalary.frequency}</span></span>
-          </div>
-        )}
-      </div>
+        {/* Primary Salary Row / Highlight */}
+        <div className="space-y-3">
+          {primarySalary ? (
+            <div className="bg-[#2e5b45]/15 border border-[#2e5b45]/30 rounded-xl p-3.5 flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-[#2e5b45]/25 text-[#3a7056] rounded-lg shrink-0">
+                  <Briefcase size={18} />
+                </div>
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <h3 className="font-bold text-sm text-text">{primarySalary.name}</h3>
+                    <span className="text-[10px] bg-[#2e5b45]/25 text-[#3a7056] px-1.5 py-0.2 rounded font-semibold border border-[#2e5b45]/30">
+                      Primary Base
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#3a7056] font-semibold mt-0.5">
+                    {formatCurrency(primarySalary.amount)} / {primarySalary.frequency}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsSalaryModalOpen(true)}
+                className="p-1.5 text-text-muted hover:text-accent transition-colors rounded-md hover:bg-primary flex items-center gap-1 text-xs"
+                title="Edit Base Salary"
+              >
+                <Edit2 size={14} />
+                <span className="hidden sm:inline">Edit</span>
+              </button>
+            </div>
+          ) : (
+            <div className="p-4 border border-dashed border-[#2e5b45]/40 bg-[#2e5b45]/10 rounded-xl text-center space-y-2">
+              <p className="text-xs text-text-muted">No primary base salary configured yet.</p>
+              <button
+                type="button"
+                onClick={() => setIsSalaryModalOpen(true)}
+                className="inline-flex items-center space-x-1.5 text-xs bg-[#2e5b45] text-white px-3.5 py-2 rounded-lg font-semibold hover:bg-[#3a7056] transition-colors shadow-sm"
+              >
+                <DollarSign size={14} />
+                <span>Set Base Salary</span>
+              </button>
+            </div>
+          )}
 
-      <div>
+          {/* Other Income Sources List */}
+          {incomeSources.filter(s => !s.isSalary && s.id !== 'salary_source' && s.name?.toLowerCase() !== 'primary salary').map(source => (
+            <div key={source.id} className="bg-primary border border-border rounded-lg p-3 flex justify-between items-center group">
+              <div>
+                <div className="flex items-center space-x-2">
+                  <h3 className="font-medium text-sm text-text">{source.name}</h3>
+                  {source.isBorrowed && (
+                    <span className="text-[10px] bg-red-500/10 text-red-400 px-1.5 py-0.5 rounded border border-red-500/20">
+                      Debt
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-text-muted mt-0.5">
+                  {formatCurrency(source.amount)} / {source.frequency}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleEditClick(source)}
+                className="p-1.5 text-text-muted hover:text-accent transition-colors rounded-md hover:bg-card"
+              >
+                <Edit2 size={15} />
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <div className="pt-4 mt-4 border-t border-border flex justify-between items-end">
+          <p className="text-sm text-text-muted">Total Master Cycle Income</p>
+          <p className="text-2xl font-bold text-accent">{formatCurrency(totalIncome)}</p>
+        </div>
+      </Card>
+
+      {/* ── Cycle Configuration Widget ── */}
+      <Card>
         <h2 className="text-xl font-semibold text-text mb-4">Cycle Configuration</h2>
         <div className="space-y-4">
           <div>
@@ -93,7 +154,7 @@ export default function IncomeSettings() {
               name="frequency"
               value={cycleConfig.frequency}
               onChange={handleCycleChange}
-              className="w-full bg-[#09090b] border border-zinc-700 rounded-lg px-3 py-2 text-text focus:outline-none focus:border-accent transition-colors"
+              className="w-full bg-primary border border-border rounded-lg px-3 py-2 text-text focus:outline-none focus:border-accent transition-colors text-sm"
             >
               <option value="weekly">Weekly</option>
               <option value="bi-weekly">Bi-weekly</option>
@@ -107,68 +168,11 @@ export default function IncomeSettings() {
               name="startDate"
               value={cycleConfig.startDate}
               onChange={handleCycleChange}
-              className="w-full bg-[#09090b] border border-zinc-700 rounded-lg px-3 py-2 text-text focus:outline-none focus:border-accent transition-colors [color-scheme:dark]"
+              className="w-full bg-primary border border-border rounded-lg px-3 py-2 text-text focus:outline-none focus:border-accent transition-colors text-sm [color-scheme:dark]"
             />
           </div>
         </div>
-      </div>
-
-      <div className="flex-1">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-text">Income Sources</h2>
-          <button
-            onClick={handleAddClick}
-            className="flex items-center space-x-1 text-sm bg-accent text-primary px-3 py-1.5 rounded-lg hover:bg-accent-hover transition-colors font-medium"
-          >
-            <Plus size={16} />
-            <span>Add</span>
-          </button>
-        </div>
-
-        <div className="space-y-3">
-          {incomeSources.length === 0 ? (
-             <div className="py-6 text-center border border-dashed border-zinc-700 rounded-xl">
-               <p className="text-text-muted text-sm">No income sources yet.</p>
-             </div>
-          ) : (
-            incomeSources.map(source => (
-              <div key={source.id} className="bg-[#09090b] border border-zinc-800 rounded-lg p-3 flex justify-between items-center group">
-                <div>
-                  <div className="flex items-center space-x-2">
-                    <h3 className="font-medium text-sm text-text">{source.name}</h3>
-                    {source.isSalary && (
-                      <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-500/20">
-                        Salary
-                      </span>
-                    )}
-                    {source.isBorrowed && (
-                      <span className="text-[10px] bg-red-500/10 text-red-500 px-1.5 py-0.5 rounded border border-red-500/20">
-                        Debt
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-text-muted mt-0.5">
-                    {formatCurrency(source.amount)} / {source.frequency}
-                  </p>
-                </div>
-                <button
-                  onClick={() => handleEditClick(source)}
-                  className="p-1.5 text-zinc-500 hover:text-accent opacity-0 group-hover:opacity-100 transition-all rounded-md hover:bg-zinc-800"
-                >
-                  <Edit2 size={16} />
-                </button>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-
-      <div className="pt-4 border-t border-zinc-800">
-        <div className="flex justify-between items-end">
-          <p className="text-sm text-text-muted">Total for Cycle</p>
-          <p className="text-2xl font-bold text-accent">{formatCurrency(totalIncome)}</p>
-        </div>
-      </div>
+      </Card>
 
       <IncomeSourceModal
         isOpen={isModalOpen}
@@ -180,7 +184,7 @@ export default function IncomeSettings() {
         isOpen={isSalaryModalOpen}
         onClose={() => setIsSalaryModalOpen(false)}
       />
-    </Card>
+    </div>
   );
 }
 

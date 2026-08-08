@@ -42,22 +42,22 @@ export default function FinancialHealthCards() {
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-      <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-4 flex items-center justify-between shadow-sm">
+      <div className="bg-card border border-border rounded-xl p-4 flex items-center justify-between shadow-sm">
         <div>
-          <p className="text-xs font-medium text-zinc-400">Total Income</p>
-          <p className="text-xl font-bold text-emerald-400 mt-1">
+          <p className="text-xs font-medium text-text-muted">Total Income</p>
+          <p className="text-xl font-bold text-[#3a7056] mt-1">
             {formatCurrency(totalIncome)}
           </p>
           <p className="text-[11px] text-zinc-500 mt-0.5">Master Cycle Income</p>
         </div>
-        <div className="p-3 bg-emerald-500/10 rounded-lg text-emerald-400">
+        <div className="p-3 bg-[#2e5b45]/15 rounded-lg text-[#3a7056]">
           <TrendingUp size={22} />
         </div>
       </div>
 
-      <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-4 flex items-center justify-between shadow-sm">
+      <div className="bg-card border border-border rounded-xl p-4 flex items-center justify-between shadow-sm">
         <div>
-          <p className="text-xs font-medium text-zinc-400">Net Cash Flow</p>
+          <p className="text-xs font-medium text-text-muted">Net Cash Flow</p>
           <p className={`text-xl font-bold mt-1 ${netCashFlow < 0 ? 'text-red-400' : 'text-accent'}`}>
             {formatCurrency(netCashFlow)}
           </p>
@@ -68,28 +68,28 @@ export default function FinancialHealthCards() {
         </div>
       </div>
 
-      <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-4 flex items-center justify-between shadow-sm">
+      <div className="bg-card border border-border rounded-xl p-4 flex items-center justify-between shadow-sm">
         <div>
-          <p className="text-xs font-medium text-zinc-400">Savings Rate</p>
-          <p className="text-xl font-bold text-cyan-400 mt-1">
+          <p className="text-xs font-medium text-text-muted">Savings Rate</p>
+          <p className="text-xl font-bold text-accent mt-1">
             {savingsRatePct}
           </p>
           <p className="text-[11px] text-zinc-500 mt-0.5">Of Total Income</p>
         </div>
-        <div className="p-3 bg-cyan-500/10 rounded-lg text-cyan-400">
+        <div className="p-3 bg-accent/10 rounded-lg text-accent">
           <PieChart size={22} />
         </div>
       </div>
 
-      <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-4 flex items-center justify-between shadow-sm">
+      <div className="bg-card border border-border rounded-xl p-4 flex items-center justify-between shadow-sm">
         <div>
-          <p className="text-xs font-medium text-zinc-400">Active Subscriptions</p>
-          <p className="text-xl font-bold text-purple-400 mt-1">
+          <p className="text-xs font-medium text-text-muted">Active Subscriptions</p>
+          <p className="text-xl font-bold text-[#a48246] mt-1">
             {subscriptions.formattedMonthlyTotal}
           </p>
           <p className="text-[11px] text-zinc-500 mt-0.5">{subscriptions.count} Services</p>
         </div>
-        <div className="p-3 bg-purple-500/10 rounded-lg text-purple-400">
+        <div className="p-3 bg-[#8c6d37]/15 rounded-lg text-[#a48246]">
           <CreditCard size={22} />
         </div>
       </div>

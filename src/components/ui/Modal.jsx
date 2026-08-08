@@ -23,8 +23,8 @@ export function Modal({ isOpen, onClose, title, children }) {
       />
       
       {/* Modal Content */}
-      <div className="bg-[#18181b] border border-zinc-800 rounded-xl shadow-xl w-full max-w-md relative z-10 animate-in zoom-in-95 duration-200">
-        <div className="flex justify-between items-center p-4 border-b border-zinc-800">
+      <div className="bg-card border border-border rounded-xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col relative z-10 animate-in zoom-in-95 duration-200">
+        <div className="flex justify-between items-center p-4 border-b border-border shrink-0">
           <h2 className="text-lg font-semibold text-text">{title}</h2>
           <button 
             onClick={onClose}
@@ -33,7 +33,7 @@ export function Modal({ isOpen, onClose, title, children }) {
             <X size={20} />
           </button>
         </div>
-        <div className="p-6">
+        <div className="p-4 sm:p-6 overflow-y-auto">
           {children}
         </div>
       </div>

@@ -9,15 +9,15 @@ export default function MainBalanceChart() {
   const moneyLeft = Math.max(0, totalIncome - totalSpent);
   
   const data = [
-    { name: 'Total Spent', value: Math.min(totalSpent, totalIncome), color: '#facc15' }, // Yellow (Accent)
-    { name: 'Remaining', value: Math.max(0, totalIncome - totalSpent), color: '#10b981' }, // Emerald
+    { name: 'Total Spent', value: Math.min(totalSpent, totalIncome), color: '#e7b956' }, // Gold (Accent)
+    { name: 'Remaining', value: Math.max(0, totalIncome - totalSpent), color: '#2e5b45' }, // Forest Green
   ];
 
   // If no income and no spent, show empty state
   const isEmpty = totalIncome === 0 && totalSpent === 0;
   
   if (isEmpty) {
-    data[0] = { name: 'No Data', value: 1, color: '#27272a' };
+    data[0] = { name: 'No Data', value: 1, color: '#38342e' };
   }
 
   const CustomTooltip = ({ active, payload }) => {

@@ -1,7 +1,8 @@
 import React, { createContext, useReducer, useContext, useEffect } from 'react';
 import { normalizeToMasterCycle, getCycleWindow, isWithinCycle } from '../utils/cycleUtils';
 
-const STORAGE_KEY = 'myvault_budget_state';
+const STORAGE_KEY = 'stacked_budget_state';
+const LEGACY_STORAGE_KEY = 'myvault_budget_state';
 
 // Default fallback state
 const defaultState = {
@@ -9,9 +10,9 @@ const defaultState = {
   cycleStartDate: null, // ISO date string — anchor for pay-cycle window
   cycleFrequency: 'monthly', // The master cycle the budget operates on
   categories: [
-    { id: '1', name: 'Bills', limit: 1000, color: '#facc15', endOfCycleAction: 'none' },
-    { id: '2', name: 'Groceries', limit: 400, color: '#10b981', endOfCycleAction: 'none' },
-    { id: '3', name: 'Entertainment', limit: 200, color: '#06b6d4', endOfCycleAction: 'none' },
+    { id: '1', name: 'Bills', limit: 1000, color: '#e7b956', endOfCycleAction: 'none' },
+    { id: '2', name: 'Groceries', limit: 400, color: '#2e5b45', endOfCycleAction: 'none' },
+    { id: '3', name: 'Entertainment', limit: 200, color: '#8c6d37', endOfCycleAction: 'none' },
   ],
   transactions: [],
   voiceLogs: [],
@@ -61,7 +62,7 @@ function sanitizeState(state) {
 // Initial state loaded from localStorage if available
 const getInitialState = () => {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
       return sanitizeState({
@@ -228,9 +229,9 @@ export function BudgetProvider({ children }) {
   const totalAllocated = state.categories.reduce((sum, cat) => sum + Number(cat.limit), 0);
   const leftToBudget = totalIncome - totalAllocated;
 
-  // Calculate spent per category for the current cycle
+  // Calculate spent per category (summing all transactions assigned to that category)
   const categorySpending = state.categories.reduce((acc, cat) => {
-    acc[cat.id] = currentCycleTransactions
+    acc[cat.id] = state.transactions
       .filter((tx) => tx.categoryId === cat.id)
       .reduce((sum, tx) => sum + Number(tx.amount), 0);
     return acc;

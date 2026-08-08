@@ -14,7 +14,7 @@ export default function VerifyEmailPage() {
     try {
       const isVerified = await refreshUserStatus();
       if (isVerified) {
-        toast.success('Email verified successfully! Welcome to MyVault.');
+        toast.success('Email verified successfully! Welcome to Stacked.');
       } else {
         toast.error('Email not verified yet. Please check your inbox and click the link.');
       }
@@ -54,15 +54,15 @@ export default function VerifyEmailPage() {
           <span className="text-accent font-semibold">{user?.email}</span>
         </p>
 
-        <Card className="backdrop-blur-xl bg-[#18181b]/90 border-zinc-800 shadow-2xl p-6 text-left space-y-4">
-          <div className="bg-[#09090b] border border-zinc-800 rounded-lg p-4 space-y-2">
+        <Card className="backdrop-blur-xl bg-card/90 border-border shadow-2xl p-6 text-left space-y-4">
+          <div className="bg-primary border border-border rounded-lg p-4 space-y-2">
             <div className="flex items-center space-x-2 text-xs font-semibold text-zinc-300 uppercase tracking-wider">
               <CheckCircle2 size={16} className="text-accent" />
               <span>Next steps to activate your account:</span>
             </div>
             <ol className="list-decimal list-inside text-xs text-zinc-400 space-y-1.5 pl-1">
               <li>Open your email inbox for <strong className="text-zinc-200">{user?.email}</strong></li>
-              <li>Click the activation link inside the email from <strong>MyVault / Firebase</strong></li>
+              <li>Click the activation link inside the email from <strong>Stacked / Firebase</strong></li>
               <li>Return here and click <strong>"I've Activated My Account"</strong></li>
             </ol>
           </div>

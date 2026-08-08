@@ -92,7 +92,7 @@ export default function SalaryModal({ isOpen, onClose }) {
 
         <div>
           <label className="block text-sm text-text-muted mb-1 flex items-center gap-1.5">
-            <Briefcase size={14} className="text-zinc-400" />
+            <Briefcase size={14} className="text-text-muted" />
             Salary Label / Source Name
           </label>
           <input
@@ -101,15 +101,15 @@ export default function SalaryModal({ isOpen, onClose }) {
             value={formData.name}
             onChange={handleChange}
             placeholder="e.g. Tech Corp Salary, Primary Job"
-            className="w-full bg-[#09090b] border border-zinc-700 rounded-lg px-3 py-2 text-text focus:outline-none focus:border-accent transition-colors text-sm"
+            className="w-full bg-primary border border-border rounded-lg px-3 py-2.5 text-text focus:outline-none focus:border-accent transition-colors text-sm"
             required
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="block text-sm text-text-muted mb-1 flex items-center gap-1.5">
-              <DollarSign size={14} className="text-zinc-400" />
+              <DollarSign size={14} className="text-text-muted" />
               Salary Amount ($)
             </label>
             <input
@@ -120,21 +120,21 @@ export default function SalaryModal({ isOpen, onClose }) {
               placeholder="0.00"
               min="0.01"
               step="0.01"
-              className="w-full bg-[#09090b] border border-zinc-700 rounded-lg px-3 py-2 text-text focus:outline-none focus:border-accent transition-colors text-sm font-semibold"
+              className="w-full bg-primary border border-border rounded-lg px-3 py-2.5 text-text focus:outline-none focus:border-accent transition-colors text-sm font-semibold"
               required
             />
           </div>
 
           <div>
             <label className="block text-sm text-text-muted mb-1 flex items-center gap-1.5">
-              <Calendar size={14} className="text-zinc-400" />
+              <Calendar size={14} className="text-text-muted" />
               Pay Frequency
             </label>
             <select
               name="frequency"
               value={formData.frequency}
               onChange={handleChange}
-              className="w-full bg-[#09090b] border border-zinc-700 rounded-lg px-3 py-2 text-text focus:outline-none focus:border-accent transition-colors text-sm"
+              className="w-full bg-primary border border-border rounded-lg px-3 py-2.5 text-text focus:outline-none focus:border-accent transition-colors text-sm"
             >
               <option value="monthly">Monthly</option>
               <option value="bi-weekly">Bi-weekly</option>
@@ -146,11 +146,11 @@ export default function SalaryModal({ isOpen, onClose }) {
 
         {/* Live Estimate Card */}
         {Number(formData.amount) > 0 && (
-          <div className="bg-[#09090b] border border-zinc-800 rounded-lg p-3 text-xs flex justify-between items-center">
-            <span className="text-zinc-400">
-              Est. income for your <strong className="text-zinc-200 capitalize">{cycleFrequency}</strong> cycle:
+          <div className="bg-primary border border-border rounded-lg p-3 text-xs flex justify-between items-center flex-wrap gap-2">
+            <span className="text-text-muted">
+              Est. income for your <strong className="text-text capitalize">{cycleFrequency}</strong> cycle:
             </span>
-            <span className="font-bold text-emerald-400 text-sm">
+            <span className="font-bold text-[#3a7056] text-sm">
               {formatCurrency(getCycleEstimate())}
             </span>
           </div>
@@ -160,13 +160,13 @@ export default function SalaryModal({ isOpen, onClose }) {
           <button
             type="button"
             onClick={onClose}
-            className="px-4 bg-zinc-800 text-zinc-300 font-medium py-2 rounded-lg hover:bg-zinc-700 transition-colors text-sm"
+            className="px-4 bg-primary text-text-muted hover:text-text font-medium py-2 rounded-lg hover:bg-[#2b2924] border border-border transition-colors text-sm"
           >
             Cancel
           </button>
           <button
             type="submit"
-            className="flex-1 bg-accent text-primary font-semibold py-2 rounded-lg hover:bg-accent-hover transition-colors text-sm flex items-center justify-center gap-2"
+            className="flex-1 bg-accent text-primary font-bold py-2 rounded-lg hover:bg-accent-hover transition-colors text-sm flex items-center justify-center gap-2"
           >
             <CheckCircle2 size={16} />
             <span>Save Salary</span>

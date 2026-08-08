@@ -41,16 +41,16 @@ export default function CategoryCharts() {
           
           let spentColor = category.color; // Normal
           if (percentUsed >= 100) spentColor = '#ef4444'; // Red if exceeded
-          else if (percentUsed >= 80) spentColor = '#facc15'; // Yellow if warning
+          else if (percentUsed >= 80) spentColor = '#e7b956'; // Gold if warning
 
           const data = [
             { name: 'Spent', value: spent, color: spentColor },
-            { name: 'Remaining', value: remaining, color: '#27272a' }, // Dark gray for unused
+            { name: 'Remaining', value: remaining, color: '#38342e' }, // Dark bronze track for unused
           ];
 
           // If totally empty, avoid rechart rendering bug
           if (spent === 0 && remaining === 0) {
-             data[0] = { name: 'Empty', value: 1, color: '#27272a' };
+             data[0] = { name: 'Empty', value: 1, color: '#38342e' };
           }
 
           return (

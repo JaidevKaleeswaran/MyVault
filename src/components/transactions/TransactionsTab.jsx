@@ -145,16 +145,16 @@ export default function TransactionsTab() {
         <div className="flex items-center space-x-2">
           <button
             onClick={() => setShowVoicePanel(!showVoicePanel)}
-            className="flex items-center space-x-1.5 text-sm bg-violet-500/15 text-violet-300 border border-violet-500/30 px-3 py-1.5 rounded-lg hover:bg-violet-500/25 transition-colors font-medium"
+            className="flex items-center space-x-1.5 text-sm bg-accent/15 text-accent border border-accent/30 px-3 py-1.5 rounded-lg hover:bg-accent/25 transition-colors font-medium"
           >
-            <Mic size={16} className="text-violet-400" />
+            <Mic size={16} className="text-accent" />
             <span>Speak Receipt</span>
           </button>
           <button
             onClick={() => setIsScannerOpen(true)}
-            className="flex items-center space-x-1.5 text-sm bg-purple-500/15 text-purple-300 border border-purple-500/30 px-3 py-1.5 rounded-lg hover:bg-purple-500/25 transition-colors font-medium"
+            className="flex items-center space-x-1.5 text-sm bg-[#8c6d37]/20 text-[#a48246] border border-[#8c6d37]/40 px-3 py-1.5 rounded-lg hover:bg-[#8c6d37]/30 transition-colors font-medium"
           >
-            <Sparkles size={16} className="text-purple-400" />
+            <Sparkles size={16} className="text-[#a48246]" />
             <span>Scan Receipt</span>
           </button>
           <button
@@ -210,7 +210,7 @@ export default function TransactionsTab() {
                       {tx.source === 'receipt_scan' && (
                         <span
                           title="Scanned from receipt"
-                          className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-purple-500/10 text-purple-400 border border-purple-500/20"
+                          className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-[#8c6d37]/15 text-[#a48246] border border-[#8c6d37]/30"
                         >
                           <Receipt size={10} className="mr-1" /> Receipt
                         </span>
@@ -218,7 +218,7 @@ export default function TransactionsTab() {
                       {tx.source === 'voice' && (
                         <span
                           title="Added via voice receipt"
-                          className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-violet-500/10 text-violet-400 border border-violet-500/20"
+                          className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-accent/15 text-accent border border-accent/30"
                         >
                           <Mic size={10} className="mr-1" /> Voice
                         </span>
@@ -226,7 +226,7 @@ export default function TransactionsTab() {
                       {(tx.recurring || tx.isSubscription) && (
                         <span
                           title="Recurring subscription"
-                          className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                          className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-[#2e5b45]/15 text-[#3a7056] border border-[#2e5b45]/30"
                         >
                           🔄 Sub
                         </span>
@@ -234,7 +234,7 @@ export default function TransactionsTab() {
                       {isSuspicious && (
                         <span
                           title="Flagged as potentially suspicious"
-                          className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-orange-500/10 text-orange-400 border border-orange-500/20 animate-pulse"
+                          className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-[#e7b956]/20 text-[#e7b956] border border-[#e7b956]/40 animate-pulse"
                         >
                           <AlertTriangle size={10} className="mr-1" /> Review
                         </span>
@@ -243,7 +243,7 @@ export default function TransactionsTab() {
                   </td>
                   <td className="py-4 px-4">
                     <span 
-                      className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border border-zinc-800"
+                      className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border border-border"
                       style={{ color: getCategoryColor(tx.categoryId), borderColor: `${getCategoryColor(tx.categoryId)}40`, backgroundColor: `${getCategoryColor(tx.categoryId)}10` }}
                     >
                       {getCategoryName(tx.categoryId)}
@@ -254,14 +254,14 @@ export default function TransactionsTab() {
                   </td>
                   <td className="py-4 px-4 text-right">
                     <div className="flex items-center justify-end space-x-1">
-                      {/* Speaker Button - ElevenLabs TTS */}
+                      {/* Speaker Button - TTS */}
                       <button
                         onClick={() => handleSpeakTransaction(tx)}
                         title="Speak transaction with ElevenLabs voice"
                         className={`p-1.5 rounded-md transition-all ${
                           speakingTxId === tx.id
-                            ? 'bg-violet-500/20 text-violet-400 border border-violet-500/40 animate-pulse opacity-100'
-                            : 'text-zinc-500 hover:text-violet-400 opacity-60 group-hover:opacity-100 hover:bg-zinc-800'
+                            ? 'bg-accent/20 text-accent border border-accent/40 animate-pulse opacity-100'
+                            : 'text-text-muted hover:text-accent opacity-60 group-hover:opacity-100 hover:bg-[#2b2924]'
                         }`}
                       >
                         {speakingTxId === tx.id ? (

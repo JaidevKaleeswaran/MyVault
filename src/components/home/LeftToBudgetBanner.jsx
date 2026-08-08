@@ -14,15 +14,15 @@ export default function LeftToBudgetBanner() {
   let message = '';
 
   if (leftToBudget > 0) {
-    bgColor = 'bg-[#10b981]/10';
-    textColor = 'text-[#10b981]';
-    borderColor = 'border-[#10b981]/20';
+    bgColor = 'bg-[#2e5b45]/20';
+    textColor = 'text-[#3a7056]';
+    borderColor = 'border-[#2e5b45]/40';
     icon = '🟢';
     message = `${formatCurrency(leftToBudget)} Left to Budget`;
   } else if (leftToBudget === 0) {
-    bgColor = 'bg-[#facc15]/10';
-    textColor = 'text-[#facc15]';
-    borderColor = 'border-[#facc15]/20';
+    bgColor = 'bg-[#e7b956]/20';
+    textColor = 'text-[#e7b956]';
+    borderColor = 'border-[#e7b956]/40';
     icon = '✨';
     message = 'Perfect! Every dollar has a job.';
   } else {

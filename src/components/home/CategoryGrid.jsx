@@ -35,62 +35,62 @@ export default function CategoryGrid() {
       label: '50/30/20 Rule',
       description: '50% Needs · 30% Wants · 20% Savings',
       splits: [
-        { name: 'Rent / Housing',    percent: 0.30, color: '#f97316', endOfCycleAction: 'none' },
-        { name: 'Groceries',         percent: 0.10, color: '#10b981', endOfCycleAction: 'none' },
-        { name: 'Bills & Utilities', percent: 0.10, color: '#facc15', endOfCycleAction: 'none' },
-        { name: 'Dining Out',        percent: 0.10, color: '#f43f5e', endOfCycleAction: 'none' },
-        { name: 'Entertainment',     percent: 0.10, color: '#06b6d4', endOfCycleAction: 'none' },
-        { name: 'Shopping',          percent: 0.10, color: '#a855f7', endOfCycleAction: 'none' },
-        { name: 'Savings',           percent: 0.20, color: '#3b82f6', endOfCycleAction: 'rollover' },
+        { name: 'Rent / Housing',    percent: 0.30, color: '#8c6d37', endOfCycleAction: 'none' },
+        { name: 'Groceries',         percent: 0.10, color: '#2e5b45', endOfCycleAction: 'none' },
+        { name: 'Bills & Utilities', percent: 0.10, color: '#e7b956', endOfCycleAction: 'none' },
+        { name: 'Dining Out',        percent: 0.10, color: '#a48246', endOfCycleAction: 'none' },
+        { name: 'Entertainment',     percent: 0.10, color: '#3a7056', endOfCycleAction: 'none' },
+        { name: 'Shopping',          percent: 0.10, color: '#d5a643', endOfCycleAction: 'none' },
+        { name: 'Savings',           percent: 0.20, color: '#e7b956', endOfCycleAction: 'rollover' },
       ],
     },
     survivor: {
       label: 'Paycheck Survivor',
       description: 'Essentials-first for tight budgets',
       splits: [
-        { name: 'Rent / Housing',    percent: 0.35, color: '#f97316', endOfCycleAction: 'none' },
-        { name: 'Groceries',         percent: 0.15, color: '#10b981', endOfCycleAction: 'none' },
-        { name: 'Bills & Utilities', percent: 0.20, color: '#facc15', endOfCycleAction: 'none' },
-        { name: 'Transport / Gas',   percent: 0.10, color: '#84cc16', endOfCycleAction: 'none' },
-        { name: 'Emergency Fund',    percent: 0.10, color: '#3b82f6', endOfCycleAction: 'rollover' },
-        { name: 'Personal',          percent: 0.10, color: '#a855f7', endOfCycleAction: 'none' },
+        { name: 'Rent / Housing',    percent: 0.35, color: '#8c6d37', endOfCycleAction: 'none' },
+        { name: 'Groceries',         percent: 0.15, color: '#2e5b45', endOfCycleAction: 'none' },
+        { name: 'Bills & Utilities', percent: 0.20, color: '#e7b956', endOfCycleAction: 'none' },
+        { name: 'Transport / Gas',   percent: 0.10, color: '#a48246', endOfCycleAction: 'none' },
+        { name: 'Emergency Fund',    percent: 0.10, color: '#e7b956', endOfCycleAction: 'rollover' },
+        { name: 'Personal',          percent: 0.10, color: '#3a7056', endOfCycleAction: 'none' },
       ],
     },
     student: {
       label: 'Student / Entry-Level',
       description: 'Built for low-income starting out',
       splits: [
-        { name: 'Rent / Housing',    percent: 0.40, color: '#f97316', endOfCycleAction: 'none' },
-        { name: 'Food & Groceries',  percent: 0.20, color: '#10b981', endOfCycleAction: 'none' },
-        { name: 'Transport',         percent: 0.10, color: '#84cc16', endOfCycleAction: 'none' },
-        { name: 'Subscriptions',     percent: 0.05, color: '#a855f7', endOfCycleAction: 'none' },
-        { name: 'Entertainment',     percent: 0.10, color: '#06b6d4', endOfCycleAction: 'none' },
-        { name: 'Savings',           percent: 0.15, color: '#3b82f6', endOfCycleAction: 'rollover' },
+        { name: 'Rent / Housing',    percent: 0.40, color: '#8c6d37', endOfCycleAction: 'none' },
+        { name: 'Food & Groceries',  percent: 0.20, color: '#2e5b45', endOfCycleAction: 'none' },
+        { name: 'Transport',         percent: 0.10, color: '#a48246', endOfCycleAction: 'none' },
+        { name: 'Subscriptions',     percent: 0.05, color: '#3a7056', endOfCycleAction: 'none' },
+        { name: 'Entertainment',     percent: 0.10, color: '#e7b956', endOfCycleAction: 'none' },
+        { name: 'Savings',           percent: 0.15, color: '#d5a643', endOfCycleAction: 'rollover' },
       ],
     },
     aggressive: {
       label: 'Aggressive Saver',
       description: 'Maximize savings & investments',
       splits: [
-        { name: 'Savings',           percent: 0.30, color: '#3b82f6', endOfCycleAction: 'rollover' },
-        { name: 'Investments',       percent: 0.10, color: '#10b981', endOfCycleAction: 'rollover' },
-        { name: 'Rent / Housing',    percent: 0.30, color: '#f97316', endOfCycleAction: 'none' },
-        { name: 'Food & Groceries',  percent: 0.15, color: '#facc15', endOfCycleAction: 'none' },
-        { name: 'Fun & Social',      percent: 0.10, color: '#06b6d4', endOfCycleAction: 'none' },
-        { name: 'Miscellaneous',     percent: 0.05, color: '#71717a', endOfCycleAction: 'none' },
+        { name: 'Savings',           percent: 0.30, color: '#e7b956', endOfCycleAction: 'rollover' },
+        { name: 'Investments',       percent: 0.10, color: '#2e5b45', endOfCycleAction: 'rollover' },
+        { name: 'Rent / Housing',    percent: 0.30, color: '#8c6d37', endOfCycleAction: 'none' },
+        { name: 'Food & Groceries',  percent: 0.15, color: '#d5a643', endOfCycleAction: 'none' },
+        { name: 'Fun & Social',      percent: 0.10, color: '#a48246', endOfCycleAction: 'none' },
+        { name: 'Miscellaneous',     percent: 0.05, color: '#38342e', endOfCycleAction: 'none' },
       ],
     },
     family: {
       label: 'Family Budget',
       description: 'For households with dependants',
       splits: [
-        { name: 'Rent / Mortgage',   percent: 0.30, color: '#f97316', endOfCycleAction: 'none' },
-        { name: 'Groceries',         percent: 0.20, color: '#10b981', endOfCycleAction: 'none' },
-        { name: 'Childcare / School',percent: 0.15, color: '#f43f5e', endOfCycleAction: 'none' },
-        { name: 'Transport',         percent: 0.10, color: '#84cc16', endOfCycleAction: 'none' },
-        { name: 'Bills & Utilities', percent: 0.10, color: '#facc15', endOfCycleAction: 'none' },
-        { name: 'Entertainment',     percent: 0.05, color: '#06b6d4', endOfCycleAction: 'none' },
-        { name: 'Emergency Fund',    percent: 0.10, color: '#3b82f6', endOfCycleAction: 'rollover' },
+        { name: 'Rent / Mortgage',   percent: 0.30, color: '#8c6d37', endOfCycleAction: 'none' },
+        { name: 'Groceries',         percent: 0.20, color: '#2e5b45', endOfCycleAction: 'none' },
+        { name: 'Childcare / School',percent: 0.15, color: '#a48246', endOfCycleAction: 'none' },
+        { name: 'Transport',         percent: 0.10, color: '#3a7056', endOfCycleAction: 'none' },
+        { name: 'Bills & Utilities', percent: 0.10, color: '#e7b956', endOfCycleAction: 'none' },
+        { name: 'Entertainment',     percent: 0.05, color: '#d5a643', endOfCycleAction: 'none' },
+        { name: 'Emergency Fund',    percent: 0.10, color: '#2e5b45', endOfCycleAction: 'rollover' },
       ],
     },
   };
@@ -234,7 +234,7 @@ export default function CategoryGrid() {
                 </div>
                 <div className="flex justify-between text-sm pt-1 border-t border-zinc-800/50 mt-1">
                   <span className="text-text-muted">Remaining</span>
-                  <span className={`font-medium ${remaining < 0 ? 'text-red-400' : 'text-[#10b981]'}`}>
+                  <span className={`font-medium ${remaining < 0 ? 'text-red-400' : 'text-[#3a7056]'}`}>
                     {remaining < 0 ? 'Over: ' : ''}{formatCurrency(Math.abs(remaining))}
                   </span>
                 </div>

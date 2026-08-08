@@ -42,7 +42,7 @@ export default function LoginPage() {
         }
       } else {
         await loginWithEmail(formData.email, formData.password);
-        toast.success('Welcome back to MyVault!');
+        toast.success('Welcome back to Stacked!');
       }
     } catch (err) {
       console.error(err);
@@ -80,10 +80,10 @@ export default function LoginPage() {
             <ShieldCheck size={32} />
           </div>
           <h1 className="text-3xl font-bold text-white tracking-tight drop-shadow-lg">
-            My<span className="text-accent">Vault</span>
+            Stack<span className="text-accent">ed</span>
           </h1>
           <p className="text-zinc-400 mt-2 text-sm">
-            {isSignUp ? 'Create your budget vault account' : 'Sign in to access your financial dashboard'}
+            {isSignUp ? 'Create your budget account' : 'Sign in to access your financial dashboard'}
           </p>
         </div>
 

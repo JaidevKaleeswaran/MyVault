@@ -9,7 +9,7 @@ export default function CategoryModal({ isOpen, onClose, category = null }) {
   const [formData, setFormData] = useState({
     name: '',
     limit: '',
-    color: '#facc15',
+    color: '#e7b956',
     endOfCycleAction: 'none',
   });
 
@@ -21,11 +21,11 @@ export default function CategoryModal({ isOpen, onClose, category = null }) {
         setFormData({
           name: category.name,
           limit: category.limit,
-          color: category.color || '#facc15',
+          color: category.color || '#e7b956',
           endOfCycleAction: category.endOfCycleAction || 'none',
         });
       } else {
-        setFormData({ name: '', limit: '', color: '#facc15', endOfCycleAction: 'none' });
+        setFormData({ name: '', limit: '', color: '#e7b956', endOfCycleAction: 'none' });
       }
     }
   }, [isOpen, category]);

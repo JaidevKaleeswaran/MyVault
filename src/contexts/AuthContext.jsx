@@ -13,16 +13,17 @@ import {
 
 const AuthContext = createContext();
 
-const STORAGE_KEY = 'myvault_user_session';
+const STORAGE_KEY = 'stacked_user_session';
+const LEGACY_STORAGE_KEY = 'myvault_user_session';
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      const saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
       if (saved) return JSON.parse(saved);
       const defaultUser = {
-        uid: 'usr_vault_guest',
-        email: 'guest@myvault.app',
+        uid: 'usr_stacked_guest',
+        email: 'guest@stacked.app',
         displayName: 'Guest User',
         photoURL: null,
         emailVerified: true,
@@ -32,8 +33,8 @@ export function AuthProvider({ children }) {
       return defaultUser;
     } catch (e) {
       return {
-        uid: 'usr_vault_guest',
-        email: 'guest@myvault.app',
+        uid: 'usr_stacked_guest',
+        email: 'guest@stacked.app',
         displayName: 'Guest User',
         photoURL: null,
         emailVerified: true,

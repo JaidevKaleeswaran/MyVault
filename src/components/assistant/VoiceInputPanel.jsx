@@ -4,7 +4,7 @@ import { parseSpokenReceipt, createWebSpeechRecognition, speakTransactionDetails
 import { GoogleGenAI } from '@google/genai';
 
 /**
- * VoiceInputPanel — MyVault Dual Voice & Text Receipt Input Agent
+ * VoiceInputPanel — Stacked Dual Voice & Text Receipt Input Agent
  * 
  * Supports:
  * 1. Direct audio recording via MediaRecorder -> Gemini 2.5 Flash transcription (100% reliable across all browsers & HTTPS/HTTP)
@@ -309,13 +309,13 @@ If the year/date is not mentioned, use today's date (${new Date().toISOString().
   };
 
   return (
-    <div className="bg-gradient-to-b from-[#0c0c14] to-[#18181b] border border-zinc-800 rounded-2xl p-5 space-y-4 relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 via-transparent to-accent/5 pointer-events-none" />
+    <div className="bg-card border border-border rounded-2xl p-5 space-y-4 relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-br from-accent/5 via-transparent to-[#8c6d37]/5 pointer-events-none" />
       
       {/* Close button */}
       <button
         onClick={onClose}
-        className="absolute top-3 right-3 p-1.5 text-zinc-500 hover:text-zinc-300 rounded-lg hover:bg-zinc-800/50 transition-colors z-10"
+        className="absolute top-3 right-3 p-1.5 text-text-muted hover:text-text rounded-lg hover:bg-primary transition-colors z-10"
       >
         <X size={16} />
       </button>
@@ -323,10 +323,10 @@ If the year/date is not mentioned, use today's date (${new Date().toISOString().
       {/* Header */}
       <div className="text-center relative z-10">
         <h3 className="text-sm font-semibold text-text flex items-center justify-center gap-2">
-          <Sparkles size={16} className="text-violet-400" />
+          <Sparkles size={16} className="text-accent" />
           Voice & Quick Receipt Entry
         </h3>
-        <p className="text-xs text-zinc-500 mt-1">
+        <p className="text-xs text-text-muted mt-1">
           Speak into the mic or type your purchase
         </p>
       </div>
@@ -342,7 +342,7 @@ If the year/date is not mentioned, use today's date (${new Date().toISOString().
               onChange={(e) => setInputText(e.target.value)}
               placeholder='e.g. "$15 on Taco Bell" or "Spent 30 at Walmart"'
               disabled={isListening || isProcessing}
-              className="w-full bg-zinc-900/80 border border-zinc-700 rounded-xl px-4 py-3 pr-24 text-sm text-zinc-200 placeholder:text-zinc-500 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/20 transition-all"
+              className="w-full bg-primary border border-border rounded-xl px-4 py-3 pr-24 text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent transition-all"
             />
             <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
               {/* Mic button */}
@@ -352,8 +352,8 @@ If the year/date is not mentioned, use today's date (${new Date().toISOString().
                 disabled={isProcessing}
                 className={`p-2 rounded-lg transition-all ${
                   isListening
-                    ? 'bg-violet-500 text-white shadow-lg shadow-violet-500/30 scale-105 animate-pulse'
-                    : 'text-zinc-400 hover:text-violet-400 hover:bg-zinc-800'
+                    ? 'bg-accent text-primary shadow-lg shadow-accent/30 scale-105 animate-pulse'
+                    : 'text-text-muted hover:text-accent hover:bg-primary'
                 }`}
                 title={isListening ? 'Stop recording & parse' : 'Speak receipt'}
               >
@@ -364,7 +364,7 @@ If the year/date is not mentioned, use today's date (${new Date().toISOString().
               <button
                 type="submit"
                 disabled={(!inputText.trim() && !isListening) || isProcessing}
-                className="p-2 rounded-lg bg-violet-500/20 text-violet-400 hover:bg-violet-500/30 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                className="p-2 rounded-lg bg-accent/20 text-accent hover:bg-accent/30 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                 title="Parse receipt"
               >
                 {isProcessing ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
@@ -382,7 +382,7 @@ If the year/date is not mentioned, use today's date (${new Date().toISOString().
                   setInputText(example);
                   processText(example);
                 }}
-                className="text-[11px] px-2.5 py-1 bg-zinc-800/60 hover:bg-zinc-700/60 text-zinc-400 hover:text-zinc-200 rounded-full border border-zinc-700/50 hover:border-zinc-600 transition-all"
+                className="text-[11px] px-2.5 py-1 bg-primary hover:bg-[#2b2924] text-text-muted hover:text-text rounded-full border border-border transition-all"
               >
                 {example}
               </button>
@@ -398,7 +398,7 @@ If the year/date is not mentioned, use today's date (${new Date().toISOString().
             {Array.from({ length: barCount }).map((_, i) => (
               <div
                 key={i}
-                className="w-[2.5px] rounded-full bg-gradient-to-t from-violet-500 to-purple-300"
+                className="w-[2.5px] rounded-full bg-gradient-to-t from-accent to-[#8c6d37]"
                 style={{
                   height: `${getBarHeight(i)}px`,
                   transition: 'height 0.1s ease',
@@ -407,7 +407,7 @@ If the year/date is not mentioned, use today's date (${new Date().toISOString().
               />
             ))}
           </div>
-          <p className="text-xs text-violet-400 flex items-center justify-center gap-1.5 animate-pulse">
+          <p className="text-xs text-accent flex items-center justify-center gap-1.5 animate-pulse">
             <Loader2 size={12} className="animate-spin" />
             Recording voice... tap mic when done
           </p>
@@ -416,16 +416,16 @@ If the year/date is not mentioned, use today's date (${new Date().toISOString().
 
       {/* Processing Loader */}
       {isProcessing && !isListening && (
-        <div className="flex items-center justify-center gap-2 text-xs text-violet-300 py-3 relative z-10">
-          <Loader2 size={16} className="animate-spin text-violet-400" />
+        <div className="flex items-center justify-center gap-2 text-xs text-accent py-3 relative z-10">
+          <Loader2 size={16} className="animate-spin text-accent" />
           <span>Transcribing & analyzing receipt...</span>
         </div>
       )}
 
       {/* Parsed Receipt Summary */}
       {parsedData && !isProcessing && (
-        <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-4 space-y-3 relative z-10 animate-in fade-in duration-300">
-          <div className="flex items-center justify-between text-emerald-400">
+        <div className="bg-[#2e5b45]/10 border border-[#2e5b45]/30 rounded-xl p-4 space-y-3 relative z-10 animate-in fade-in duration-300">
+          <div className="flex items-center justify-between text-[#3a7056]">
             <div className="flex items-center gap-2">
               <CheckCircle2 size={16} />
               <span className="text-xs font-semibold">Extracted Receipt Data</span>
@@ -433,7 +433,7 @@ If the year/date is not mentioned, use today's date (${new Date().toISOString().
             <button
               type="button"
               onClick={() => speakTransactionDetails(parsedData)}
-              className="flex items-center gap-1 text-[11px] bg-violet-500/20 text-violet-300 hover:bg-violet-500/30 border border-violet-500/30 px-2.5 py-1 rounded-md transition-colors"
+              className="flex items-center gap-1 text-[11px] bg-accent/20 text-accent hover:bg-accent/30 border border-accent/30 px-2.5 py-1 rounded-md transition-colors"
             >
               <Volume2 size={12} />
               <span>Speak</span>
@@ -441,9 +441,9 @@ If the year/date is not mentioned, use today's date (${new Date().toISOString().
           </div>
 
           {/* Source text */}
-          <div className="bg-zinc-900/50 rounded-lg p-2.5">
-            <p className="text-[10px] text-zinc-500 uppercase mb-1">Transcript / Description</p>
-            <p className="text-xs text-zinc-300 italic">"{parsedData.raw_transcript}"</p>
+          <div className="bg-primary rounded-lg p-2.5 border border-border">
+            <p className="text-[10px] text-text-muted uppercase mb-1">Transcript / Description</p>
+            <p className="text-xs text-text italic">"{parsedData.raw_transcript}"</p>
           </div>
 
           {parsedData._confidenceIssues?.length > 0 && (
@@ -454,18 +454,18 @@ If the year/date is not mentioned, use today's date (${new Date().toISOString().
           )}
 
           <div className="grid grid-cols-3 gap-3 text-center">
-            <div className={`rounded-lg p-2.5 ${parsedData._confidenceIssues?.includes('merchant') ? 'bg-amber-500/10 border border-amber-500/20' : 'bg-zinc-900/50'}`}>
-              <p className="text-[10px] text-zinc-500 uppercase">Item</p>
+            <div className={`rounded-lg p-2.5 ${parsedData._confidenceIssues?.includes('merchant') ? 'bg-amber-500/10 border border-amber-500/20' : 'bg-primary border border-border'}`}>
+              <p className="text-[10px] text-text-muted uppercase">Item</p>
               <p className={`text-sm font-semibold mt-0.5 ${parsedData._confidenceIssues?.includes('merchant') ? 'text-amber-400' : 'text-text'}`}>{parsedData.description}</p>
               {parsedData._confidenceIssues?.includes('merchant') && <p className="text-[9px] text-amber-500 mt-0.5">Needs Review</p>}
             </div>
-            <div className={`rounded-lg p-2.5 ${parsedData._confidenceIssues?.includes('amount') ? 'bg-amber-500/10 border border-amber-500/20' : 'bg-zinc-900/50'}`}>
-              <p className="text-[10px] text-zinc-500 uppercase">Amount</p>
-              <p className={`text-sm font-semibold mt-0.5 ${parsedData._confidenceIssues?.includes('amount') ? 'text-amber-400' : 'text-emerald-400'}`}>${Number(parsedData.amount).toFixed(2)}</p>
+            <div className={`rounded-lg p-2.5 ${parsedData._confidenceIssues?.includes('amount') ? 'bg-amber-500/10 border border-amber-500/20' : 'bg-primary border border-border'}`}>
+              <p className="text-[10px] text-text-muted uppercase">Amount</p>
+              <p className={`text-sm font-semibold mt-0.5 ${parsedData._confidenceIssues?.includes('amount') ? 'text-amber-400' : 'text-[#3a7056]'}`}>${Number(parsedData.amount).toFixed(2)}</p>
               {parsedData._confidenceIssues?.includes('amount') && <p className="text-[9px] text-amber-500 mt-0.5">Needs Review</p>}
             </div>
-            <div className={`rounded-lg p-2.5 ${parsedData._confidenceIssues?.includes('date') ? 'bg-amber-500/10 border border-amber-500/20' : 'bg-zinc-900/50'}`}>
-              <p className="text-[10px] text-zinc-500 uppercase">Date</p>
+            <div className={`rounded-lg p-2.5 ${parsedData._confidenceIssues?.includes('date') ? 'bg-amber-500/10 border border-amber-500/20' : 'bg-primary border border-border'}`}>
+              <p className="text-[10px] text-text-muted uppercase">Date</p>
               <p className={`text-sm font-semibold mt-0.5 ${parsedData._confidenceIssues?.includes('date') ? 'text-amber-400' : 'text-text'}`}>{parsedData.date}</p>
               {parsedData._confidenceIssues?.includes('date') && <p className="text-[9px] text-amber-500 mt-0.5">Needs Review</p>}
             </div>
@@ -474,13 +474,13 @@ If the year/date is not mentioned, use today's date (${new Date().toISOString().
           <div className="flex gap-2 pt-1">
             <button
               onClick={handleReset}
-              className="flex-1 px-3 py-2 text-xs font-medium bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg border border-zinc-700 transition-colors"
+              className="flex-1 px-3 py-2 text-xs font-medium bg-primary hover:bg-[#2b2924] text-text rounded-lg border border-border transition-colors"
             >
               Start Over
             </button>
             <button
               onClick={handleConfirm}
-              className="flex-1 px-3 py-2 text-xs font-semibold bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-400 hover:to-purple-500 text-white rounded-lg transition-all shadow-lg shadow-violet-500/20"
+              className="flex-1 px-3 py-2 text-xs font-semibold bg-accent hover:bg-accent-hover text-primary rounded-lg transition-all shadow-md font-bold"
             >
               Add Expense
             </button>
